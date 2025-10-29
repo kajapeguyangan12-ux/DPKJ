@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SiGeDe",
-  description: "Aplikasi Desa Dauh Puri Kaja",
+  description: "Aplikasi SiGeDe",
   viewport: "width=device-width, initial-scale=1",
   icons: {
     icon: [
