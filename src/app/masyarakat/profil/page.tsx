@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from '../../components/BottomNavigation';
-const SipekaLogo = "/logo/LOGO_DPKJ.png";
+const SiGedeLogo = "/logo/LOGO_DPKJ.png";
 
 export default function ProfilMasyarakatPage() {
   // Mock data; replace with real user data later
   const user = {
     nama: "Nama Lengkap",
     nik: "NIK",
-    desa: "Peguyangan kaja",
+    desa: "Dauh Puri Kaja",
     role: "Role",
   };
 
@@ -31,8 +31,8 @@ export default function ProfilMasyarakatPage() {
             <div className="absolute inset-0 -z-10 opacity-40 [background:radial-gradient(120%_100%_at_0%_0%,#ef4444,transparent_60%)]" />
             <div className="flex items-start justify-between gap-2 px-4 pt-3">
               <div className="inline-flex items-center gap-2 text-rose-700 font-bold">
-                <Image src={SipekaLogo} alt="SIPEKA" width={18} height={18} />
-                <span>SIPEKA</span>
+                <Image src={SiGedeLogo} alt="SiGede" width={18} height={18} />
+                <span>SiGede</span>
               </div>
               <div className="text-right text-sm">
                 <div className="font-semibold">{user.nama}</div>
