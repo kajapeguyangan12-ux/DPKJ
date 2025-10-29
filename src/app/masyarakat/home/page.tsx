@@ -86,7 +86,7 @@ const allMenuItems: MenuItem[] = [
   },
   {
     title: "Data Desa",
-    href: "/masyarakat/profil-desa",
+    href: "/masyarakat/data-desa",
     gradient: "from-indigo-500 to-indigo-600",
     icon: (
       <div className="relative">
@@ -162,9 +162,9 @@ export default function HomeMasyarakatMobile() {
   }
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-800">
-      <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
+      <div className="mx-auto w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl px-3 sm:px-4 lg:px-6 pb-20 pt-4">
         {/* Custom Header Card with Logo in Back Button */}
-        <div className="mb-6 overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-gray-200/50 backdrop-blur-xl">
+        <div className="mb-4 sm:mb-6 overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-xl ring-1 ring-gray-200/50 backdrop-blur-xl">
           <div className="relative">
             {/* Enhanced Background Gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-red-600 to-red-700 opacity-95"></div>
@@ -176,22 +176,22 @@ export default function HomeMasyarakatMobile() {
                                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
             }}></div>
 
-            <div className="relative z-10 flex items-center justify-between px-6 py-4">
+            <div className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
               {/* Left Section - Logo Only with White Background (Not clickable) */}
-              <div className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full overflow-hidden bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
                 <Image
                   src={BGDLogo}
                   alt="BGD Logo"
-                  width={32}
-                  height={32}
-                  className="object-contain"
+                  width={24}
+                  height={24}
+                  className="object-contain sm:w-8 sm:h-8"
                   priority
                 />
               </div>
 
               {/* Center Section - Title & Subtitle */}
               <div className="text-center">
-                <h1 className="text-lg font-bold text-white tracking-wide">
+                <h1 className="text-base sm:text-lg font-bold text-white tracking-wide">
                   Beranda
                 </h1>
                 <p className="text-xs text-white/80 font-medium mt-0.5">
@@ -200,13 +200,13 @@ export default function HomeMasyarakatMobile() {
               </div>
 
               {/* Right Section - Logo */}
-              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
                 <Image
                   src={DesaLogo}
                   alt="Dauh Puri Kaja"
-                  width={32}
-                  height={32}
-                  className="object-contain"
+                  width={24}
+                  height={24}
+                  className="object-contain sm:w-8 sm:h-8"
                   priority
                 />
               </div>
@@ -218,43 +218,43 @@ export default function HomeMasyarakatMobile() {
         </div>
 
         {/* Welcome Section */}
-        <section className="mb-6 rounded-3xl bg-gradient-to-r from-slate-600 to-slate-700 p-6 text-white shadow-xl">
-          <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+        <section className="mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-slate-600 to-slate-700 p-4 sm:p-6 text-white shadow-xl">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-3 sm:gap-4">
             <div>
-              <div className="mb-2 text-sm opacity-90">Ucapan Selamat Datang</div>
-              <div className="flex h-20 w-52 items-center justify-center rounded-xl bg-white/20 text-sm font-medium backdrop-blur-sm">
+              <div className="mb-2 text-xs sm:text-sm opacity-90">Ucapan Selamat Datang</div>
+              <div className="flex h-16 sm:h-20 w-40 sm:w-52 items-center justify-center rounded-xl bg-white/20 text-xs sm:text-sm font-medium backdrop-blur-sm">
                 Foto Kepala Desa
               </div>
             </div>
             <div className="text-center">
               <div className="mb-2 flex justify-center">
                 <div className="relative">
-                  <Landmark className="h-16 w-16 text-white/90" />
-                  <Building2 className="h-6 w-6 absolute -bottom-1 -right-1 text-white bg-slate-600 rounded-full p-1" />
+                  <Landmark className="h-12 w-12 sm:h-16 sm:w-16 text-white/90" />
+                  <Building2 className="h-4 w-4 sm:h-6 sm:w-6 absolute -bottom-1 -right-1 text-white bg-slate-600 rounded-full p-1" />
                 </div>
               </div>
               <div className="flex justify-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-white/80" />
-                <span className="h-2 w-2 rounded-full bg-white/40" />
-                <span className="h-2 w-2 rounded-full bg-white/40" />
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-white/80" />
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-white/40" />
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-white/40" />
               </div>
             </div>
           </div>
         </section>
 
         {/* Services Card */}
-        <section className="mb-8">
-          <div className="rounded-3xl bg-white/95 p-6 shadow-xl ring-1 ring-gray-200 backdrop-blur-sm">
-            <div className="grid grid-cols-5 gap-3 text-center text-xs">
+        <section className="mb-6 sm:mb-8">
+          <div className="rounded-2xl sm:rounded-3xl bg-white/95 p-4 sm:p-6 shadow-xl ring-1 ring-gray-200 backdrop-blur-sm">
+            <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 text-center text-xs">
               {menuItems.map((item) => (
                 <Link key={item.title} href={item.href} className="group">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`mb-3 grid h-14 w-14 place-items-center rounded-3xl bg-gradient-to-br ${item.gradient} text-xl text-white shadow-xl ring-2 ring-white/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:ring-4 group-hover:ring-white/40 group-active:scale-95`}
+                      className={`mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-2xl sm:rounded-3xl bg-gradient-to-br ${item.gradient} text-lg sm:text-xl text-white shadow-xl ring-2 ring-white/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:ring-4 group-hover:ring-white/40 group-active:scale-95`}
                     >
                       {item.icon}
                     </div>
-                    <span className="text-center font-bold leading-tight text-gray-800 text-[10px]">
+                    <span className="text-center font-bold leading-tight text-gray-800 text-[9px] sm:text-[10px]">
                       {item.title}
                     </span>
                   </div>
@@ -265,19 +265,19 @@ export default function HomeMasyarakatMobile() {
         </section>
 
         {/* News Section */}
-        <section className="mb-6">
-          <h3 className="mb-4 text-lg font-bold text-blue-800">Berita Terbaru</h3>
-          <div className="rounded-3xl bg-white/90 p-4 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm">
-            <div className="mb-4 text-center text-sm font-semibold text-blue-700">
+        <section className="mb-4 sm:mb-6">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-bold text-blue-800">Berita Terbaru</h3>
+          <div className="rounded-2xl sm:rounded-3xl bg-white/90 p-3 sm:p-4 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm">
+            <div className="mb-3 sm:mb-4 text-center text-xs sm:text-sm font-semibold text-blue-700">
               Foto Berita Terbaru
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 p-12 text-center shadow-inner">
+            <div className="rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 p-8 sm:p-12 text-center shadow-inner">
               <div className="relative mx-auto">
-                <Newspaper className="h-16 w-16 text-blue-600" />
-                <Camera className="h-6 w-6 absolute -bottom-1 -right-1 text-blue-700 bg-blue-200 rounded-full p-1" />
+                <Newspaper className="h-12 w-12 sm:h-16 sm:w-16 text-blue-600" />
+                <Camera className="h-4 w-4 sm:h-6 sm:w-6 absolute -bottom-1 -right-1 text-blue-700 bg-blue-200 rounded-full p-1" />
               </div>
             </div>
-            <div className="mt-4 text-center">
+            <div className="mt-3 sm:mt-4 text-center">
               <div className="flex justify-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-blue-600 shadow-sm" />
                 <span className="h-3 w-3 rounded-full bg-blue-300" />

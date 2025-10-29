@@ -302,7 +302,7 @@ export default function DaftarMasyarakatPage() {
         {/* Footer */}
         <div className="text-center mt-6 px-4">
           <p className="text-gray-500 text-sm leading-relaxed">
-            © 2024 Dauh Puri Kaja • Sistem Informasi Desa Digital
+            ©CopyRight BaliGerbang Digital
           </p>
         </div>
       </div>
