@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public content - readable by everyone
+    match /e-news_berita/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /e-news_pengumuman/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Profil Desa content - public read, admin write
+    match /profil-desa/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Wilayah content - public read, admin write
+    match /wilayah/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Sejarah content - public read, admin write
+    match /sejarah/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Visi & Misi content - public read, admin write
+    match /visi-misi/{document} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Admin profiles - secure access
+    match /admins/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Users collection - for user management
+    match /users/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated();
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
