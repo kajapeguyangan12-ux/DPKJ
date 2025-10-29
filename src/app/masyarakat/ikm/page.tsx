@@ -72,7 +72,8 @@ export default function IKMPage() {
         <HeaderCard 
           title="Indeks Kepuasan Masyarakat" 
           subtitle="IKM Desa Peguyangan"
-          backUrl="/masyarakat/home" 
+          backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
         {/* Filter Section */}

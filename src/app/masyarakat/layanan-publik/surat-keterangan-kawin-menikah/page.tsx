@@ -71,6 +71,7 @@ export default function SuratKeteranganKawinMenikahPage() {
           title="Surat Keterangan Kawin/Menikah"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

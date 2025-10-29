@@ -75,7 +75,7 @@ export default function PelayananTaringDukcapilPage() {
     <main className="min-h-[100svh] bg-red-50 text-gray-900">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
         {/* Header */}
-        <HeaderCard title="Pelayanan Taring Dukcapil" backUrl="/masyarakat/layanan-publik" />
+        <HeaderCard title="Pelayanan Taring Dukcapil" backUrl="/masyarakat/layanan-publik" showBackButton={true} />
 
         {/* Search */}
         <div className="mb-6">

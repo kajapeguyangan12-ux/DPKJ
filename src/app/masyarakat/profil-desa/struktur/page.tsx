@@ -1,54 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HeaderCard from "../../../components/HeaderCard";
 import BottomNavigation from '../../../components/BottomNavigation';
+import { getStrukturPemerintahan, getStrukturCoverImage, AnggotaStruktur } from "../../../../lib/profilDesaService";
 
 export default function StrukturPemerintahanPage() {
-  const [selectedStructure, setSelectedStructure] = useState<'desa' | 'bpd' | 'lembaga'>('desa');
+  const [selectedStructure, setSelectedStructure] = useState<'pemerintahan-desa' | 'bpd'>('pemerintahan-desa');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [anggotaList, setAnggotaList] = useState<AnggotaStruktur[]>([]);
+  const [coverImage, setCoverImage] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
-  const strukturDesa = [
-    { jabatan: "Kepala Desa", nama: "Nama Kepala Desa" },
-    { jabatan: "Sekretaris Desa", nama: "Nama Sekretaris" },
-    { jabatan: "Kaur Keuangan", nama: "Nama Kaur Keuangan" },
-    { jabatan: "Kaur Umum", nama: "Nama Kaur Umum" },
-    { jabatan: "Kaur Kesra", nama: "Nama Kaur Kesra" },
-    { jabatan: "Kadus I", nama: "Nama Kadus I" },
-    { jabatan: "Kadus II", nama: "Nama Kadus II" },
-    { jabatan: "Kadus III", nama: "Nama Kadus III" },
-  ];
+  useEffect(() => {
+    fetchStrukturData();
+  }, [selectedStructure]);
 
-  const strukturBPD = [
-    { jabatan: "Ketua BPD", nama: "Nama Ketua BPD" },
-    { jabatan: "Wakil Ketua BPD", nama: "Nama Wakil Ketua" },
-    { jabatan: "Sekretaris BPD", nama: "Nama Sekretaris BPD" },
-    { jabatan: "Anggota BPD", nama: "Nama Anggota 1" },
-    { jabatan: "Anggota BPD", nama: "Nama Anggota 2" },
-    { jabatan: "Anggota BPD", nama: "Nama Anggota 3" },
-  ];
-
-  const lembagaKemasyarakatan = [
-    { nama: "LPM (Lembaga Pemberdayaan Masyarakat)", bidang: "Pemberdayaan Masyarakat" },
-    { nama: "PKK (Pembinaan Kesejahteraan Keluarga)", bidang: "Kesejahteraan Keluarga" },
-    { nama: "Karang Taruna", bidang: "Pemuda & Olahraga" },
-    { nama: "BPD (Badan Permusyawaratan Desa)", bidang: "Musyarawah Desa" },
-    { nama: "Linmas (Perlindungan Masyarakat)", bidang: "Keamanan & Ketertiban" },
-  ];
-
-  const structureOptions = [
-    { key: 'desa', label: 'Struktur Pemerintahan Desa' },
-    { key: 'bpd', label: 'Badan Permusyawaratan Desa' }
-  ];
-
-  const getCurrentData = () => {
-    switch(selectedStructure) {
-      case 'desa': return strukturDesa;
-      case 'bpd': return strukturBPD;
-      case 'lembaga': return lembagaKemasyarakatan;
-      default: return strukturDesa;
+  const fetchStrukturData = async () => {
+    try {
+      setLoading(true);
+      const data = await getStrukturPemerintahan(selectedStructure);
+      setAnggotaList(data.sort((a, b) => a.urutan - b.urutan));
+      
+      // Get cover image
+      const coverImageUrl = await getStrukturCoverImage(selectedStructure);
+      setCoverImage(coverImageUrl);
+    } catch (error) {
+      console.error('Error fetching struktur data:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const structureOptions = [
+    { key: 'pemerintahan-desa' as const, label: 'Struktur Pemerintahan Desa' },
+    { key: 'bpd' as const, label: 'Badan Permusyawaratan Desa' }
+  ];
 
   const getCurrentTitle = () => {
     return structureOptions.find(opt => opt.key === selectedStructure)?.label || 'Struktur Pemerintahan Desa';
@@ -56,9 +43,8 @@ export default function StrukturPemerintahanPage() {
 
   const getCurrentPhotoTitle = () => {
     switch(selectedStructure) {
-      case 'desa': return 'Foto Struktur Desa';
+      case 'pemerintahan-desa': return 'Foto Struktur Desa';
       case 'bpd': return 'Foto Struktur BPD';
-      case 'lembaga': return 'Foto Struktur';
       default: return 'Foto Struktur Desa';
     }
   };
@@ -69,6 +55,7 @@ export default function StrukturPemerintahanPage() {
         <HeaderCard 
           title="Profil Desa" 
           backUrl="/masyarakat/profil-desa"
+          showBackButton={true}
         />
 
         {/* Dropdown Selector */}
@@ -88,7 +75,7 @@ export default function StrukturPemerintahanPage() {
                   <button
                     key={option.key}
                     onClick={() => {
-                      setSelectedStructure(option.key as 'desa' | 'bpd' | 'lembaga');
+                      setSelectedStructure(option.key);
                       setIsDropdownOpen(false);
                     }}
                     className="w-full px-6 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 first:rounded-t-2xl last:rounded-b-2xl"
@@ -107,35 +94,84 @@ export default function StrukturPemerintahanPage() {
             <div className="mb-4 text-center text-sm font-semibold text-red-700">
               {getCurrentPhotoTitle()}
             </div>
-            <div className="rounded-2xl bg-gradient-to-br from-red-100 to-red-200 p-16 text-center shadow-inner mb-4">
-              <span className="text-6xl">🏛️</span>
-            </div>
 
-            {/* Dynamic Organizational Chart */}
-            <div className="space-y-3">
-              {getCurrentData().map((item, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 shadow-sm">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-800 text-white">
-                    👤
+            {/* Cover Image */}
+            {coverImage ? (
+              <div className="rounded-2xl overflow-hidden shadow-inner mb-4">
+                <img
+                  src={coverImage}
+                  alt={getCurrentPhotoTitle()}
+                  className="w-full h-48 object-cover"
+                />
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-gradient-to-br from-red-100 to-red-200 p-16 text-center shadow-inner mb-4">
+                <span className="text-6xl">🏛️</span>
+                <p className="text-sm text-red-700 mt-2 font-medium">Foto belum tersedia</p>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center text-sm text-gray-500 py-4">
+                Memuat data...
+              </div>
+            )}
+
+            {/* Anggota List */}
+            {!loading && anggotaList.length > 0 ? (
+              <div className="space-y-4">
+                {anggotaList.map((anggota, index) => (
+                  <div key={anggota.id || index} className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 shadow-md border border-white/30">
+                    <div className="flex items-start gap-4">
+                      {/* Profile Photo */}
+                      <div className="flex-shrink-0">
+                        {anggota.foto ? (
+                          <img
+                            src={anggota.foto}
+                            alt={anggota.nama}
+                            className="h-16 w-16 rounded-full object-cover border-2 border-red-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center text-white text-2xl shadow-sm">
+                            👤
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        {/* Nama Section */}
+                        <div className="mb-3">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                            Nama
+                          </div>
+                          <h4 className="text-lg font-bold text-gray-900 leading-tight">
+                            {anggota.nama}
+                          </h4>
+                        </div>
+                        
+                        {/* Jabatan Section */}
+                        <div className="mb-2">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                            Jabatan
+                          </div>
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-red-100 border border-red-200">
+                            <span className="text-sm font-semibold text-red-700">
+                              {anggota.jabatan}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    {'jabatan' in item ? (
-                      // Government/BPD Structure
-                      <>
-                        <div className="text-sm font-semibold">{item.jabatan}</div>
-                        <div className="text-xs text-gray-600">{item.nama}</div>
-                      </>
-                    ) : (
-                      // Community Institutions
-                      <>
-                        <div className="text-sm font-semibold">{item.nama}</div>
-                        <div className="text-xs text-gray-600">{item.bidang}</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : !loading && (
+              <div className="text-center text-sm text-gray-500 py-4">
+                Belum ada data struktur
+              </div>
+            )}
           </div>
         </section>
       </div>

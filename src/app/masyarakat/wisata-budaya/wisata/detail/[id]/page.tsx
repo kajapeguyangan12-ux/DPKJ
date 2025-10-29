@@ -133,6 +133,7 @@ export default function WisataDetailPage({ params }: TourismDetailProps) {
           title="Detail Wisata"
           subtitle={tourismDetail.title}
           backUrl="/masyarakat/wisata-budaya/wisata"
+          showBackButton={true}
         />
 
         {/* Main Image Section */}

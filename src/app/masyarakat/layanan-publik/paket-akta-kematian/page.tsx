@@ -47,7 +47,7 @@ export default function PaketAktaKematianPage() {
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-900">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
-        <HeaderCard title="Paket Akta Kematian" backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil" />
+        <HeaderCard title="Paket Akta Kematian" backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil" showBackButton={true} />
 
         {/* Service Icon and Title */}
         <div className="mb-6 text-center">

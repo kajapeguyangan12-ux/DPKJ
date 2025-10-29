@@ -118,7 +118,7 @@ export default function AktaSuratLainnyaPage() {
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-900">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
-        <HeaderCard title="Akta/Surat Lainnya" backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil" />
+        <HeaderCard title="Akta/Surat Lainnya" backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil" showBackButton={true} />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Notice */}

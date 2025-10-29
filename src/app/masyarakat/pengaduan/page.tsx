@@ -118,6 +118,7 @@ export default function PengaduanPage() {
           title="Pengaduan"
           subtitle="Layanan Aspirasi Masyarakat"
           backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
         {/* Search Bar */}

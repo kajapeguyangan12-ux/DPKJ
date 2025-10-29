@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from '../../components/BottomNavigation';
+import { BarChart3, TrendingUp } from "lucide-react";
 
 type FinanceCategory = "pendapatan" | "belanja" | "pembiayaan";
 type DatasetKey = "anggaran" | "realisasi" | "lebihKurang";
@@ -194,89 +195,54 @@ export default function KeuanganMasyarakatPage() {
   const totalDifference = totalRealisasi - totalAnggaran;
 
   return (
-    <main className="min-h-[100svh] bg-red-50 text-gray-800">
-      <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
+    <main className="min-h-[100svh] bg-gradient-to-b from-blue-50 to-gray-100 text-gray-800">
+      <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
         <HeaderCard 
           title="Keuangan" 
-          subtitle="APB Desa"
+          subtitle="Informasi Keuangan Desa"
           backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
-        <section className="rounded-3xl border border-gray-300 bg-gray-100/80 p-4 shadow-lg backdrop-blur">
-          <div className="flex items-start justify-between gap-3 rounded-2xl border border-gray-300 bg-white/90 p-4 shadow-inner">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Analisis Keuangan
-              </p>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white shadow">
-                <span>Analisa Realisasi Keuangan</span>
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-white text-gray-900 shadow-inner">
-                  *
-                </span>
-              </div>
-        </div>
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-gray-300 bg-white">
-          [=]
-        </div>
-      </div>
-
-          <div className="mt-4 rounded-2xl border border-gray-300 bg-white/90 p-4 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">
-                  APBD Desa Tahun {selectedYear}
-                </p>
-                <p className="text-sm font-semibold text-gray-800">
-                  {categoryLabels[activeCategory]}
-                </p>
-              </div>
-              <label className="flex w-fit flex-col text-xs font-semibold text-gray-600">
-                Filter Tahun
-                <select
-                  className="mt-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-gray-400 focus:outline-none"
-                  value={selectedYear}
-                  onChange={(event) => setSelectedYear(Number(event.target.value))}
-                >
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </label>
+        {/* Analisis Keuangan Card */}
+        <div className="mb-4 rounded-2xl bg-white/90 backdrop-blur-sm p-4 shadow-lg ring-1 ring-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Analisis Keuangan</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-xl px-3 py-2">
+              <TrendingUp className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Analisa Realisasi Keuangan</span>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded-xl bg-gray-900/90 p-3 text-white shadow">
-                <p className="text-[10px] uppercase tracking-wide text-gray-200/70">
-                  Total Anggaran
-                </p>
-                <p className="mt-1 text-sm font-semibold">
-                  {formatCurrency(totalAnggaran)}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white p-3 text-gray-900 shadow-sm ring-1 ring-gray-200">
-                <p className="text-[10px] uppercase tracking-wide text-gray-500">
-                  Total Realisasi
-                </p>
-                <p className="mt-1 text-sm font-semibold">
-                  {formatCurrency(totalRealisasi)}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white p-3 text-gray-900 shadow-sm ring-1 ring-gray-200">
-                <p className="text-[10px] uppercase tracking-wide text-gray-500">
-                  Selisih
-                </p>
-                <p
-                  className="mt-1 text-sm font-semibold"
-                  aria-live="polite"
-                >
-                  {formatCurrency(totalDifference)}
-                </p>
-              </div>
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 border border-gray-300">
+              <BarChart3 className="w-5 h-5 text-gray-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* APBD Section */}
+        <div className="mb-4 rounded-2xl bg-white/90 backdrop-blur-sm p-4 shadow-lg ring-1 ring-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">APBD Desa Tahun {selectedYear}</h2>
+              <p className="text-sm text-gray-600">{categoryLabels[activeCategory]}</p>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs font-semibold text-gray-600 mb-1">Filter Tahun:</label>
+              <select
+                className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-gray-400 focus:outline-none"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(Number(event.target.value))}
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          {/* Category Buttons */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {(Object.keys(categoryLabels) as FinanceCategory[]).map((category) => {
               const isActive = category === activeCategory;
               return (
@@ -286,7 +252,7 @@ export default function KeuanganMasyarakatPage() {
                   onClick={() => setActiveCategory(category)}
                   className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                     isActive
-                      ? "border-gray-900 bg-gray-900 text-white shadow"
+                      ? "border-red-300 bg-red-200 text-red-800 shadow"
                       : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
                   }`}
                 >
@@ -296,58 +262,20 @@ export default function KeuanganMasyarakatPage() {
             })}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-dashed border-gray-400 bg-white p-4 shadow-inner">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Grafik {datasetLabels[activeDataset]}
-              </p>
-              <span className="text-[11px] text-gray-500">
-                Nilai dalam Rupiah
-              </span>
-            </div>
-            <div className="mt-3 space-y-3">
-              {chartRows.map((row) => {
-                const widthPercent =
-                  maxChartValue === 0
-                    ? 0
-                    : Math.max(
-                        8,
-                        Math.round((Math.abs(row.amount) / maxChartValue) * 100)
-                      );
-
-                const barColor =
-                  activeDataset === "realisasi"
-                    ? "bg-emerald-500"
-                    : activeDataset === "lebihKurang"
-                    ? row.amount >= 0
-                      ? "bg-emerald-500"
-                      : "bg-rose-500"
-                    : "bg-rose-500";
-
-                return (
-                  <div key={`${row.label}-${activeDataset}`}>
-                    <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
-                      <span className="pr-2">{row.label}</span>
-                      <span>{formatCurrency(row.amount)}</span>
-                    </div>
-                    <div className="mt-1 h-3 w-full overflow-hidden rounded-full bg-gray-200">
-                      <div
-                        className={`h-full ${barColor}`}
-                        style={{ width: `${widthPercent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              {chartRows.length === 0 && (
-                <div className="grid h-24 place-items-center rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-500">
-                  Data tidak tersedia untuk kombinasi ini.
-                </div>
-              )}
+          {/* Grafik Section */}
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <h3 className="text-center text-lg font-semibold text-gray-700 mb-4">Grafik</h3>
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center text-gray-500">
+                <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">Grafik {datasetLabels[activeDataset]}</p>
+                <p className="text-xs text-gray-400">Data akan ditampilkan di sini</p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          {/* Dataset Buttons */}
+          <div className="grid grid-cols-3 gap-3">
             {(Object.keys(datasetLabels) as DatasetKey[]).map((dataset) => {
               const isActive = dataset === activeDataset;
               return (
@@ -357,7 +285,7 @@ export default function KeuanganMasyarakatPage() {
                   onClick={() => setActiveDataset(dataset)}
                   className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                     isActive
-                      ? "border-gray-900 bg-gray-900 text-white shadow"
+                      ? "border-red-300 bg-red-200 text-red-800 shadow"
                       : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50"
                   }`}
                 >
@@ -366,98 +294,44 @@ export default function KeuanganMasyarakatPage() {
               );
             })}
           </div>
-        </section>
+        </div>
 
-        <section className="mt-5 space-y-4">
-          <div className="rounded-3xl border border-gray-300 bg-white p-4 shadow">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">
-                Tabel Anggaran
-              </h2>
-              <span className="text-xs text-gray-500">
-                {formatCurrency(totalAnggaran)}
-              </span>
+        {/* Tabel Section */}
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-white/90 backdrop-blur-sm p-4 shadow-lg ring-1 ring-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Tabel</h3>
+            
+            {/* Tabel Anggaran */}
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Tabel Anggaran</h4>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div className="space-y-2">
+                  {sectionForYear.anggaran.map((row, index) => (
+                    <div key={`anggaran-${row.label}-${index}`} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-sm text-gray-700">{row.label}</span>
+                      <span className="text-sm font-semibold text-gray-900">{formatCurrency(row.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <table className="w-full border-separate border-spacing-y-2 text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="rounded-l-xl bg-gray-100 px-3 py-2">
-                    Komponen
-                  </th>
-                  <th className="rounded-r-xl bg-gray-100 px-3 py-2 text-right">
-                    Nilai
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sectionForYear.anggaran.map((row) => (
-                  <tr key={`anggaran-${row.label}`}>
-                    <td className="rounded-l-xl bg-gray-50 px-3 py-2 text-gray-700">
-                      {row.label}
-                    </td>
-                    <td className="rounded-r-xl bg-gray-50 px-3 py-2 text-right font-semibold text-gray-900">
-                      {formatCurrency(row.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
 
-          <div className="rounded-3xl border border-gray-300 bg-white p-4 shadow">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">
-                Tabel Realisasi
-              </h2>
-              <span className="text-xs text-gray-500">
-                {formatCurrency(totalRealisasi)}
-              </span>
-            </div>
-            <table className="w-full border-separate border-spacing-y-2 text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="rounded-l-xl bg-gray-100 px-3 py-2">
-                    Komponen
-                  </th>
-                  <th className="rounded-r-xl bg-gray-100 px-3 py-2 text-right">
-                    Nilai
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sectionForYear.realisasi.map((row) => (
-                  <tr key={`realisasi-${row.label}`}>
-                    <td className="rounded-l-xl bg-gray-50 px-3 py-2 text-gray-700">
-                      {row.label}
-                    </td>
-                    <td className="rounded-r-xl bg-gray-50 px-3 py-2 text-right font-semibold text-gray-900">
-                      {formatCurrency(row.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-700">
-              <p className="font-semibold text-gray-900">Ringkasan Selisih</p>
-              <p className="mt-1 text-xs">
-                Realisasi {totalDifference >= 0 ? "lebih" : "kurang"}{" "}
-                {formatCurrency(Math.abs(totalDifference))} dibandingkan
-                anggaran pada tahun {selectedYear}.
-              </p>
-              <ul className="mt-3 space-y-1 text-xs text-gray-600">
-                {differenceRows.map((row) => (
-                  <li key={`diff-${row.label}`} className="flex justify-between">
-                    <span>{row.label}</span>
-                    <span className="font-semibold text-gray-900">
-                      {formatCurrency(row.amount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            {/* Tabel Realisasi */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Tabel Realisasi</h4>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div className="space-y-2">
+                  {sectionForYear.realisasi.map((row, index) => (
+                    <div key={`realisasi-${row.label}-${index}`} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                      <span className="text-sm text-gray-700">{row.label}</span>
+                      <span className="text-sm font-semibold text-gray-900">{formatCurrency(row.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
       </div>
 
       <BottomNavigation />

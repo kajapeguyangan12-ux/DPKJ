@@ -138,6 +138,7 @@ export default function BudayaDetailPage({ params }: CultureDetailProps) {
           title="Detail Budaya"
           subtitle={cultureDetail.title}
           backUrl="/masyarakat/wisata-budaya/budaya"
+          showBackButton={true}
         />
 
         {/* Main Image Section */}

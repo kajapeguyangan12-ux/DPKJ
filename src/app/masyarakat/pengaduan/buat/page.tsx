@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import HeaderCard from '../../../components/HeaderCard';
 import BottomNavigation from '../../../components/BottomNavigation';
 import Image from "next/image";
 import Link from "next/link";
@@ -80,44 +81,11 @@ export default function BuatPengaduanPage() {
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-900">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
-        {/* Header Card */}
-        <div className="mb-4 rounded-2xl border border-black/10 bg-white/70 shadow-lg ring-1 ring-black/5 backdrop-blur">
-          <div className="relative overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 -z-10 opacity-50 [background:radial-gradient(120%_100%_at_0%_0%,#ef4444,transparent_60%)]" />
-            <div className="flex items-center justify-between px-4 py-2">
-              <div className="grid h-8 w-20 place-items-center overflow-hidden rounded-lg bg-white/80 ring-1 ring-red-400/40">
-                <Image
-                  src={BgdLogo}
-                  alt="Logo BGD"
-                  width={60}
-                  height={30}
-                  className="object-contain"
-                />
-              </div>
-              <div className="text-base font-bold text-gray-900">Buat Pengaduan</div>
-              <div className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-white/80 ring-1 ring-red-400/40">
-                <Image
-                  src={DesaLogo}
-                  alt="Logo DPKJ"
-                  width={30}
-                  height={30}
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Back Button */}
-        <div className="mb-4">
-          <Link
-            href="/masyarakat/pengaduan"
-            className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-lg ring-1 ring-red-200 backdrop-blur transition hover:bg-white hover:shadow-xl"
-          >
-            <BackIcon className="h-4 w-4" />
-            Kembali
-          </Link>
-        </div>
+        <HeaderCard 
+          title="Buat Pengaduan"
+          backUrl="/masyarakat/pengaduan"
+          showBackButton={true}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Notice */}

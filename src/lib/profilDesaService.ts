@@ -11,7 +11,8 @@ import {
   onSnapshot,
   Timestamp,
   setDoc,
-  getDoc
+  getDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db } from './firebase';
@@ -120,6 +121,41 @@ export interface WilayahContent {
   updatedAt?: Timestamp;
 }
 
+/**
+ * Retry function with exponential backoff
+ * Helps handle temporary network issues
+ */
+const retryWithBackoff = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelayMs: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const errorMessage = (error as any)?.message || '';
+      
+      // Only retry for network/timeout errors, not permission errors
+      if (errorMessage.includes('Permission denied') || 
+          errorMessage.includes('Unauthorized')) {
+        throw error;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const delayMs = initialDelayMs * Math.pow(2, attempt);
+        console.log(`Attempt ${attempt + 1} failed, retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  throw lastError;
+};
+
 export interface SejarahContent {
   id: string;
   deskripsi: string;
@@ -136,8 +172,9 @@ export interface SejarahContent {
 export interface VisiMisiContent {
   id: string;
   visi: string;
+  visiImageUrl: string;
   misi: string;
-  fotoUrl: string;
+  misiImageUrl: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -148,6 +185,20 @@ export interface StrukturPemerintahaan {
   jabatan: string;
   foto: string;
   deskripsi?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface StrukturOfficer {
+  jabatan: string;
+  nama: string;
+}
+
+export interface StrukturPemerintahanSimplified {
+  id: string;
+  type: 'desa' | 'bpd';
+  foto: string;
+  officers: StrukturOfficer[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -477,8 +528,9 @@ export const getVisiMisiContent = async (): Promise<VisiMisiContent | null> => {
     return {
       id: docSnap.id,
       visi: typeof data.visi === 'string' ? data.visi : '',
+      visiImageUrl: typeof data.visiImageUrl === 'string' ? data.visiImageUrl : '',
       misi: typeof data.misi === 'string' ? data.misi : '',
-      fotoUrl: typeof data.fotoUrl === 'string' ? data.fotoUrl : '',
+      misiImageUrl: typeof data.misiImageUrl === 'string' ? data.misiImageUrl : '',
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
@@ -496,8 +548,9 @@ export const saveVisiMisiContent = async (content: Omit<VisiMisiContent, 'id' | 
 
     const payload: Record<string, unknown> = {
       visi: content.visi,
+      visiImageUrl: content.visiImageUrl,
       misi: content.misi,
-      fotoUrl: content.fotoUrl,
+      misiImageUrl: content.misiImageUrl,
       updatedAt: now,
     };
 
@@ -524,8 +577,9 @@ export const subscribeToVisiMisiContent = (callback: (data: VisiMisiContent | nu
         callback({
           id: docSnap.id,
           visi: typeof data.visi === 'string' ? data.visi : '',
+          visiImageUrl: typeof data.visiImageUrl === 'string' ? data.visiImageUrl : '',
           misi: typeof data.misi === 'string' ? data.misi : '',
-          fotoUrl: typeof data.fotoUrl === 'string' ? data.fotoUrl : '',
+          misiImageUrl: typeof data.misiImageUrl === 'string' ? data.misiImageUrl : '',
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
         });
@@ -641,4 +695,274 @@ export const subscribeToStrukturPemerintahaan = (callback: (data: StrukturPemeri
       callback([]);
     }
   );
+};
+
+// ==========================================
+// STRUKTUR PEMERINTAHAN - SIMPLIFIED VERSION
+// ==========================================
+
+export async function getStrukturPemerintahanSimplified(type: 'desa' | 'bpd'): Promise<StrukturPemerintahanSimplified | null> {
+  try {
+    const docRef = doc(db, 'struktur-pemerintahan-simplified', type);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return {
+        id: docSnap.id,
+        type: type,
+        foto: docSnap.data().foto || '',
+        officers: docSnap.data().officers || [],
+        createdAt: docSnap.data().createdAt,
+        updatedAt: docSnap.data().updatedAt,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting struktur pemerintahaan simplified:', error);
+    return null;
+  }
+}
+
+export async function saveStrukturPemerintahanSimplified(type: 'desa' | 'bpd', data: Omit<StrukturPemerintahanSimplified, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+  try {
+    const docRef = doc(db, 'struktur-pemerintahan-simplified', type);
+    
+    await setDoc(docRef, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error saving struktur pemerintahaan simplified:', error);
+    throw error;
+  }
+}
+
+export function subscribeToStrukturPemerintahanSimplified(type: 'desa' | 'bpd', callback: (data: StrukturPemerintahanSimplified | null) => void): () => void {
+  const docRef = doc(db, 'struktur-pemerintahan-simplified', type);
+  
+  const unsubscribe = onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        callback({
+          id: docSnap.id,
+          type: type,
+          foto: docSnap.data().foto || '',
+          officers: docSnap.data().officers || [],
+          createdAt: docSnap.data().createdAt,
+          updatedAt: docSnap.data().updatedAt,
+        });
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.error('Error subscribing to struktur pemerintahaan simplified:', error);
+      callback(null);
+    }
+  );
+  
+  return unsubscribe;
+}
+
+// New Struktur Pemerintahan Functions with Type Support
+export interface AnggotaStruktur {
+  id?: string;
+  nama: string;
+  jabatan: string;
+  email?: string;
+  noTelp?: string;
+  foto?: string;
+  urutan: number;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export const getStrukturPemerintahan = async (tipe: 'pemerintahan-desa' | 'bpd'): Promise<AnggotaStruktur[]> => {
+  try {
+    const collectionName = `struktur-${tipe}`;
+    const q = query(collection(db, collectionName), orderBy('urutan', 'asc'));
+    const querySnapshot = await getDocs(q);
+    
+    const anggotaList: AnggotaStruktur[] = [];
+    querySnapshot.forEach((doc) => {
+      anggotaList.push({
+        id: doc.id,
+        ...doc.data() as Omit<AnggotaStruktur, 'id'>
+      });
+    });
+    
+    return anggotaList;
+  } catch (error) {
+    console.error('Error getting struktur pemerintahan:', error);
+    throw error;
+  }
+};
+
+export const saveStrukturPemerintahan = async (
+  tipe: 'pemerintahan-desa' | 'bpd', 
+  data: Omit<AnggotaStruktur, 'id' | 'createdAt' | 'updatedAt'>,
+  id?: string
+): Promise<void> => {
+  try {
+    const collectionName = `struktur-${tipe}`;
+    const timestamp = serverTimestamp();
+    
+    if (id) {
+      // Update existing
+      const docRef = doc(db, collectionName, id);
+      await updateDoc(docRef, {
+        ...data,
+        updatedAt: timestamp
+      });
+    } else {
+      // Add new
+      await addDoc(collection(db, collectionName), {
+        ...data,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      });
+    }
+  } catch (error) {
+    console.error('Error saving struktur pemerintahan:', error);
+    throw error;
+  }
+};
+
+export const deleteStrukturPemerintahan = async (
+  tipe: 'pemerintahan-desa' | 'bpd',
+  id: string
+): Promise<void> => {
+  try {
+    const collectionName = `struktur-${tipe}`;
+    const docRef = doc(db, collectionName, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting struktur pemerintahan:', error);
+    throw error;
+  }
+};
+
+// Cover Image functions
+export const getStrukturCoverImage = async (tipe: 'pemerintahan-desa' | 'bpd'): Promise<string> => {
+  try {
+    const collectionName = `struktur-${tipe}`;
+    const docRef = doc(db, collectionName, 'cover-image');
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return data.coverImage || '';
+    }
+    return '';
+  } catch (error) {
+    console.error('Error getting cover image:', error);
+    return '';
+  }
+};
+
+export const saveStrukturCoverImage = async (
+  tipe: 'pemerintahan-desa' | 'bpd',
+  coverImageUrl: string
+): Promise<void> => {
+  try {
+    const collectionName = `struktur-${tipe}`;
+    const docRef = doc(db, collectionName, 'cover-image');
+    
+    await setDoc(docRef, {
+      coverImage: coverImageUrl,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error saving cover image:', error);
+    throw error;
+  }
+};
+
+// Lembaga Kemasyarakatan Functions
+export const getLembagaKemasyarakatan = async (tipeLembaga: string = 'kemasyarakatan') => {
+  try {
+    const collectionName = `lembaga-${tipeLembaga}`;
+    const q = query(collection(db, collectionName), orderBy('urutanTampil', 'asc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting lembaga data:', error);
+    return [];
+  }
+};
+
+export const saveLembagaKemasyarakatan = async (tipeLembaga: string = 'kemasyarakatan', anggotaList: any[]) => {
+  try {
+    const collectionName = `lembaga-${tipeLembaga}`;
+    
+    // Delete existing data
+    const existingQuery = query(collection(db, collectionName));
+    const existingSnapshot = await getDocs(existingQuery);
+    const deletePromises = existingSnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    // Add new data
+    const addPromises = anggotaList.map(anggota => 
+      setDoc(doc(db, collectionName, anggota.id), {
+        ...anggota,
+        updatedAt: serverTimestamp()
+      })
+    );
+    
+    await Promise.all(addPromises);
+  } catch (error) {
+    console.error('Error saving lembaga data:', error);
+    throw error;
+  }
+};
+
+export const deleteLembagaKemasyarakatan = async (tipeLembaga: string = 'kemasyarakatan', anggotaId: string) => {
+  try {
+    const collectionName = `lembaga-${tipeLembaga}`;
+    await deleteDoc(doc(db, collectionName, anggotaId));
+  } catch (error) {
+    console.error('Error deleting anggota lembaga:', error);
+    throw error;
+  }
+};
+
+export const getLembagaCoverImage = async (tipeLembaga: string = 'kemasyarakatan'): Promise<string> => {
+  try {
+    const collectionName = `lembaga-${tipeLembaga}`;
+    const docRef = doc(db, collectionName, 'cover-image');
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return data.coverImage || '';
+    }
+    return '';
+  } catch (error) {
+    console.error('Error getting lembaga cover image:', error);
+    return '';
+  }
+};
+
+export const saveLembagaCoverImage = async (
+  tipeLembaga: string = 'kemasyarakatan',
+  coverImageUrl: string
+): Promise<void> => {
+  try {
+    const collectionName = `lembaga-${tipeLembaga}`;
+    const docRef = doc(db, collectionName, 'cover-image');
+    
+    await setDoc(docRef, {
+      coverImage: coverImageUrl,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error saving lembaga cover image:', error);
+    throw error;
+  }
 };

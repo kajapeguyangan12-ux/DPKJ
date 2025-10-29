@@ -2,6 +2,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { AdminProvider } from './AdminContext';
+import Image from 'next/image';
 
 function RenderIcon({ name, className = '' }: { name: string; className?: string }) {
   const baseProps = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, className } as const;
@@ -55,8 +56,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100 flex font-sans text-gray-800">
       <aside className="hidden md:flex md:w-64 flex-col bg-white border-r border-gray-200 py-8 px-6 gap-6 h-full transition-all duration-300 shadow-sm">
         <div className="flex items-center justify-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-lg">
-            <RenderIcon name="home" className="w-6 h-6 text-white" />
+          <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center shadow-lg border border-gray-200">
+            <Image 
+              src="/logo/Logo_BGD1.png"
+              alt="Logo BGD"
+              width={56}
+              height={56}
+              className="w-14 h-14 object-contain"
+            />
           </div>
         </div>
         <nav className="flex flex-col gap-2 mt-4">

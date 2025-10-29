@@ -105,6 +105,7 @@ export default function DaftarMasyarakatPage() {
           title="Pendaftaran"
           subtitle="Buat Akun Baru"
           backUrl="/masyarakat/login"
+          showBackButton={false}
         />
 
         {/* Registration Form Card */}

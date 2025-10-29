@@ -8,11 +8,7 @@ export default function EditProfilMasyarakatPage() {
   return (
     <main className="min-h-[100svh] bg-merah-putih animate-bg-pan text-gray-800">
       <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
-        <HeaderCard title="Pusat Pengaturan" />
-
-        <div className="mb-3">
-          <Link href="/masyarakat/profil" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-lg shadow-sm">‹</Link>
-        </div>
+        <HeaderCard title="Pusat Pengaturan" backUrl="/masyarakat/profil" showBackButton={true} />
 
         {/* Akun Anda Section */}
         <section className="mb-6">

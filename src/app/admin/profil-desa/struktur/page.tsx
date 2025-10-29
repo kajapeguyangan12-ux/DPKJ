@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -6,726 +6,639 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../../../lib/firebase";
 import AdminLayout from "../../components/AdminLayout";
 import AdminHeaderCard, { AdminHeaderSearchBar, AdminHeaderAccount } from "../../../components/AdminHeaderCard";
-import {
-  addStrukturPemerintahaan,
-  updateStrukturPemerintahaan,
-  deleteStrukturPemerintahaan,
-  uploadImageToStorage,
-  subscribeToStrukturPemerintahaan,
-  type StrukturPemerintahaan,
+import { 
+  getStrukturPemerintahan, 
+  saveStrukturPemerintahan, 
+  deleteStrukturPemerintahan,
+  getStrukturCoverImage,
+  saveStrukturCoverImage,
+  uploadImageToStorage 
 } from "../../../../lib/profilDesaService";
 
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  label: string;
+interface AnggotaStruktur {
+  id?: string;
+  nama: string;
+  jabatan: string;
+  email?: string;
+  noTelp?: string;
+  foto?: string;
+  urutan: number;
 }
 
-interface StructureType {
-  id: string;
-  label: string;
-  collection: string;
-}
+type TipeStruktur = 'pemerintahan-desa' | 'bpd';
 
-const STRUCTURE_TYPES: StructureType[] = [
-  { id: "struktur_pemerintahan", label: "Struktur Pemerintah Desa", collection: "struktur-pemerintahaan" },
-  { id: "lembaga_pemberdayaan", label: "Lembaga Pemberdayaan Masyarakat", collection: "lembaga-pemberdayaan" },
+const TIPE_STRUKTUR_OPTIONS = [
+  { value: 'pemerintahan-desa', label: 'Struktur Pemerintahan Desa' },
+  { value: 'bpd', label: 'Badan Permusyawaratan Desa' }
 ];
 
-const CATEGORIES: Category[] = [
-  { id: "tambah_anggota", name: "Tambah Anggota", icon: "👥", label: "Tambah Anggota" },
-  { id: "hapus_data", name: "Hapus Data", icon: "🗑️", label: "Hapus Data" },
-  { id: "ubah_gambar", name: "Ubah Gambar", icon: "🖼️", label: "Ubah Gambar" },
-  { id: "ubah_anggota", name: "Ubah Anggota", icon: "✏️", label: "Ubah Anggota" },
-];
-
-export default function StrukturPemerintahaanPage() {
+export default function StrukturPage() {
   const router = useRouter();
-  const [strukturData, setStrukturData] = useState<StrukturPemerintahaan[]>([]);
+  const [tipeStruktur, setTipeStruktur] = useState<TipeStruktur>('pemerintahan-desa');
+  const [anggotaList, setAnggotaList] = useState<AnggotaStruktur[]>([]);
+  const [coverImage, setCoverImage] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [structureType, setStructureType] = useState<string>("struktur_pemerintahan");
-  const [activeCategory, setActiveCategory] = useState<string>("tambah_anggota");
-  const [showModal, setShowModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    nama: "",
-    jabatan: "",
-    deskripsi: "",
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAnggota, setEditingAnggota] = useState<AnggotaStruktur | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = subscribeToStrukturPemerintahaan((data) => {
-      setStrukturData(data);
+    fetchData();
+  }, [tipeStruktur]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await getStrukturPemerintahan(tipeStruktur);
+      // Sort by urutan
+      const sortedData = data.sort((a: AnggotaStruktur, b: AnggotaStruktur) => a.urutan - b.urutan);
+      setAnggotaList(sortedData);
+      
+      // Get cover image
+      const coverImageUrl = await getStrukturCoverImage(tipeStruktur);
+      setCoverImage(coverImageUrl);
+    } catch (error) {
+      console.error('Error fetching struktur:', error);
+    } finally {
       setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleEdit = (item: StrukturPemerintahaan) => {
-    setFormData({
-      nama: item.nama,
-      jabatan: item.jabatan,
-      deskripsi: item.deskripsi || "",
-    });
-    setEditingId(item.id);
-    setSelectedFile(null);
-    setShowModal(true);
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/admin/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const handleTambahAnggota = () => {
+    setEditingAnggota(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditAnggota = (anggota: AnggotaStruktur) => {
+    setEditingAnggota(anggota);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteAnggota = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus anggota ini?')) {
+      try {
+        await deleteStrukturPemerintahan(tipeStruktur, id);
+        await fetchData();
+        alert('Anggota berhasil dihapus');
+      } catch (error) {
+        console.error('Error deleting anggota:', error);
+        alert('Gagal menghapus anggota');
+      }
+    }
+  };
+
+  const handleMoveUp = async (index: number) => {
+    if (index > 0) {
+      const newList = [...anggotaList];
+      [newList[index], newList[index - 1]] = [newList[index - 1], newList[index]];
+      
+      // Update urutan
+      newList.forEach((anggota, i) => {
+        anggota.urutan = i + 1;
+      });
+      
+      setAnggotaList(newList);
+      
+      // Save to firestore
+      try {
+        await Promise.all(newList.map(anggota => 
+          saveStrukturPemerintahan(tipeStruktur, anggota, anggota.id)
+        ));
+      } catch (error) {
+        console.error('Error updating order:', error);
+      }
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index < anggotaList.length - 1) {
+      const newList = [...anggotaList];
+      [newList[index], newList[index + 1]] = [newList[index + 1], newList[index]];
+      
+      // Update urutan
+      newList.forEach((anggota, i) => {
+        anggota.urutan = i + 1;
+      });
+      
+      setAnggotaList(newList);
+      
+      // Save to firestore
+      try {
+        await Promise.all(newList.map(anggota => 
+          saveStrukturPemerintahan(tipeStruktur, anggota, anggota.id)
+        ));
+      } catch (error) {
+        console.error('Error updating order:', error);
+      }
+    }
+  };
+
+  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUploading(true);
+    if (!file) return;
 
     try {
-      let fotoUrl = "";
-
-      if (editingId) {
-        const existing = strukturData.find((item) => item.id === editingId);
-        fotoUrl = existing?.foto || "";
-      }
-
-      if (selectedFile) {
-        fotoUrl = await uploadImageToStorage(
-          selectedFile,
-          `struktur-${Date.now()}`
-        );
-      }
-
-      const data = {
-        nama: formData.nama,
-        jabatan: formData.jabatan,
-        deskripsi: formData.deskripsi,
-        foto: fotoUrl,
-      };
-
-      if (editingId) {
-        await updateStrukturPemerintahaan(editingId, data);
-      } else {
-        await addStrukturPemerintahaan(data);
-      }
-
-      setShowModal(false);
-      setSelectedFile(null);
-      setFormData({ nama: "", jabatan: "", deskripsi: "" });
-      setEditingId(null);
+      setUploadingCover(true);
+      const imageUrl = await uploadImageToStorage(file, `cover-struktur-${tipeStruktur}`);
+      await saveStrukturCoverImage(tipeStruktur, imageUrl);
+      setCoverImage(imageUrl);
+      alert('Cover image berhasil diupdate');
     } catch (error) {
-      console.error("Error saving struktur data:", error);
-      alert("Terjadi kesalahan saat menyimpan data.");
+      console.error('Error uploading cover image:', error);
+      alert('Gagal mengupload cover image');
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setDeletingId(id);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleDelete = async () => {
-    if (!deletingId) return;
-
-    setDeleting(true);
-    try {
-      await deleteStrukturPemerintahaan(deletingId);
-      setShowDeleteConfirm(false);
-      setDeletingId(null);
-    } catch (error) {
-      console.error("Error deleting struktur data:", error);
-      alert("Terjadi kesalahan saat menghapus data.");
-    } finally {
-      setDeleting(false);
+      setUploadingCover(false);
     }
   };
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Memuat data struktur pemerintahaan...</p>
-          </div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       </AdminLayout>
     );
   }
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50">
-        <AdminHeaderCard title="Kelola Struktur Pemerintahaan">
-          <AdminHeaderSearchBar />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        {/* Header */}
+        <AdminHeaderCard title="Struktur Pemerintahan">
+          <AdminHeaderSearchBar placeholder="Cari anggota struktur..." />
           <AdminHeaderAccount onLogout={handleLogout} />
         </AdminHeaderCard>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Navigation */}
-          <div className="mb-6">
-            <Link
-              href="/admin/profil-desa"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {/* Content */}
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-8">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                  Struktur Pemerintahan
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Kelola data anggota struktur organisasi pemerintahan desa
+                </p>
+              </div>
+              <button
+                onClick={handleTambahAnggota}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Kembali ke Profil Desa
-            </Link>
-          </div>
-
-          {/* Dropdown Selector */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-8">
-              <label htmlFor="category-select" className="text-lg font-semibold text-gray-700">
-                Pilih Kategori
-              </label>
-              <div className="relative flex-1 max-w-md">
-                <select
-                  id="category-select"
-                  value={structureType}
-                  onChange={(e) => {
-                    setStructureType(e.target.value);
-                    setActiveCategory("tambah_anggota");
-                  }}
-                  className="w-full px-6 py-3 rounded-xl border-2 border-gray-300 bg-white text-gray-700 font-semibold appearance-none cursor-pointer focus:outline-none focus:border-blue-600 transition-colors"
-                >
-                  {STRUCTURE_TYPES.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-700 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                  />
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-              </div>
+                Tambah Anggota
+              </button>
             </div>
 
-            {/* Category Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`p-6 rounded-2xl border-2 transition-all duration-300 font-semibold flex flex-col items-center gap-3 ${
-                    activeCategory === category.id
-                      ? "border-blue-600 bg-blue-50 text-blue-700"
-                      : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50 text-gray-700"
-                  }`}
+            {/* Navigation & Controls */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              {/* Back Navigation */}
+              <div className="flex items-center justify-between mb-6">
+                <Link 
+                  href="/admin/profil-desa" 
+                  className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200 group"
                 >
-                  <span className="text-4xl">{category.icon}</span>
-                  <span className="text-sm text-center">{category.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Subsection Based on Active Category */}
-          {activeCategory === "tambah_anggota" && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Tambah Anggota</h2>
-              <div className="bg-white rounded-2xl shadow-md p-8">
-                <button
-                  onClick={() => {
-                    setFormData({ nama: "", jabatan: "", deskripsi: "" });
-                    setSelectedFile(null);
-                    setEditingId(null);
-                    setShowModal(true);
-                  }}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2 font-semibold"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
-                  Tambah Anggota Baru
-                </button>
+                  Kembali ke Profil Desa
+                </Link>
               </div>
-            </div>
-          )}
-
-          {activeCategory === "hapus_data" && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Hapus Data</h2>
-              <div className="bg-white rounded-2xl shadow-md p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {strukturData && strukturData.length > 0 ? (
-                    strukturData.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-red-50 transition-colors"
-                      >
-                        <div>
-                          <p className="font-semibold text-gray-900">{item.nama}</p>
-                          <p className="text-sm text-gray-600">{item.jabatan}</p>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteClick(item.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-8">
-                      <p className="text-gray-500">Tidak ada data untuk dihapus</p>
-                    </div>
-                  )}
+              
+              {/* Dropdown Tipe Struktur */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <label className="text-sm font-semibold text-gray-700">
+                  Pilih Tipe Struktur:
+                </label>
+                <div className="relative">
+                  <select
+                    value={tipeStruktur}
+                    onChange={(e) => setTipeStruktur(e.target.value as TipeStruktur)}
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-10 text-sm font-medium text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[280px]"
+                  >
+                    {TIPE_STRUKTUR_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {activeCategory === "ubah_gambar" && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Ubah Gambar</h2>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-12 text-gray-600 hover:border-blue-400 transition-colors">
-                  <svg
-                    className="w-16 h-16 text-gray-400 mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-lg font-semibold mb-2">
-                    Drag atau klik untuk pilih gambar
+              {/* Cover Image Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Cover Image Halaman</h4>
+                      <p className="text-sm text-gray-600">Gambar cover yang akan ditampilkan di halaman publik</p>
+                    </div>
+                  </div>
+                  
+                  {/* Current Cover Image Preview */}
+                  {coverImage && (
+                    <div className="relative inline-block">
+                      <img
+                        src={coverImage}
+                        alt="Cover Image Preview"
+                        className="max-w-md h-32 object-cover rounded-lg border border-gray-200 shadow-sm"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Current Cover
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload Cover Image */}
+                  <div className="flex items-center space-x-4">
+                    <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium rounded-lg hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      {coverImage ? 'Ganti Cover Image' : 'Upload Cover Image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverImageChange}
+                        disabled={uploadingCover}
+                        className="hidden"
+                      />
+                    </label>
+                    {uploadingCover && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
+                        Mengupload...
+                      </div>
+                    )}
+                  </div>
+                  
+                  <p className="text-xs text-gray-500">
+                    Gambar akan ditampilkan sebagai cover di halaman masyarakat. Disarankan menggunakan gambar dengan rasio landscape (16:9) untuk hasil terbaik.
                   </p>
                 </div>
               </div>
             </div>
-          )}
 
-          {activeCategory === "ubah_anggota" && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Ubah Anggota</h2>
-                <button
-                  onClick={() => {
-                    setFormData({ nama: "", jabatan: "", deskripsi: "" });
-                    setSelectedFile(null);
-                    setEditingId(null);
-                    setShowModal(true);
-                  }}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2 font-semibold"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Tambah Anggota
-                </button>
-              </div>
-
-              {/* Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {strukturData && strukturData.length > 0 ? (
-                  strukturData.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
-                    >
-                      {/* Image */}
-                      <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
-                        {item.foto ? (
-                          <img
-                            src={item.foto}
-                            alt={item.nama}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <svg
-                              className="w-20 h-20 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
-                          {item.nama}
-                        </h3>
-                        <p className="text-blue-600 font-semibold mb-3">
-                          {item.jabatan}
-                        </p>
-                        {item.deskripsi && (
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                            {item.deskripsi}
-                          </p>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-4">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium text-sm"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(item.id)}
-                            className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium text-sm"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            Hapus
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full">
-                    <div className="bg-white rounded-2xl shadow-md p-12 text-center">
-                      <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <svg
-                          className="w-12 h-12 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 8.646 4 4 0 010-8.646zM9 20H4a4 4 0 00-4 4v0h20v0a4 4 0 00-4-4h-5z"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-gray-500 text-lg mb-6">
-                        Belum ada anggota struktur pemerintahaan.
-                      </p>
-                      <button
-                        onClick={() => {
-                          setFormData({ nama: "", jabatan: "", deskripsi: "" });
-                          setSelectedFile(null);
-                          setEditingId(null);
-                          setShowModal(true);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2 font-medium"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                        Tambah Anggota
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Form Modal */}
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setShowModal(false)}
-            ></div>
-            <div className="bg-white rounded-3xl w-full max-w-2xl relative z-60 max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {editingId ? "Edit Struktur Pemerintahaan" : "Tambah Struktur Pemerintahaan"}
+            {/* Data List */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {TIPE_STRUKTUR_OPTIONS.find(opt => opt.value === tipeStruktur)?.label}
                   </h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600 text-2xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>{anggotaList.length} Anggota</span>
+                  </div>
                 </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Nama */}
-                  <div>
-                    <label className="block text-base font-semibold text-gray-700 mb-3">
-                      Nama Lengkap
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.nama}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nama: e.target.value })
-                      }
-                      placeholder="Masukkan nama lengkap"
-                      className="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-base"
-                      required
-                    />
-                  </div>
-
-                  {/* Jabatan */}
-                  <div>
-                    <label className="block text-base font-semibold text-gray-700 mb-3">
-                      Jabatan
-                    </label>
-                    <select
-                      value={formData.jabatan}
-                      onChange={(e) =>
-                        setFormData({ ...formData, jabatan: e.target.value })
-                      }
-                      className="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-base"
-                      required
-                    >
-                      <option value="">Pilih Jabatan</option>
-                      <option value="Kepala Desa">Kepala Desa</option>
-                      <option value="Wakil Kepala Desa">Wakil Kepala Desa</option>
-                      <option value="Sekretaris Desa">Sekretaris Desa</option>
-                      <option value="Bendahara Desa">Bendahara Desa</option>
-                      <option value="Kaur Tata Usaha">Kaur Tata Usaha</option>
-                      <option value="Kaur Perencanaan">Kaur Perencanaan</option>
-                      <option value="Kaur Pembangunan">Kaur Pembangunan</option>
-                      <option value="Kaur Keuangan">Kaur Keuangan</option>
-                      <option value="Kaur Pemberdayaan Masyarakat">Kaur Pemberdayaan Masyarakat</option>
-                      <option value="Kepala Dusun">Kepala Dusun</option>
-                      <option value="Lainnya">Lainnya</option>
-                    </select>
-                  </div>
-
-                  {/* Deskripsi */}
-                  <div>
-                    <label className="block text-base font-semibold text-gray-700 mb-3">
-                      Deskripsi (Opsional)
-                    </label>
-                    <textarea
-                      value={formData.deskripsi}
-                      onChange={(e) =>
-                        setFormData({ ...formData, deskripsi: e.target.value })
-                      }
-                      placeholder="Masukkan deskripsi singkat"
-                      className="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-base"
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Upload Foto */}
-                  <div>
-                    <label className="block text-base font-semibold text-gray-700 mb-3">
-                      Upload Foto
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-2xl p-4 text-gray-600">
-                        <span className="text-sm">
-                          {selectedFile ? selectedFile.name : "Pilih atau drag foto di sini"}
-                        </span>
-                        <svg
-                          className="w-6 h-6 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Button Group */}
-                  <div className="flex gap-4 pt-6">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="flex-1 px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-base"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={uploading}
-                      className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold transition-all duration-300 transform hover:scale-105 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Menyimpan...
-                        </div>
-                      ) : editingId ? (
-                        "Simpan Perubahan"
-                      ) : (
-                        "Tambah"
-                      )}
-                    </button>
-                  </div>
-                </form>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setShowDeleteConfirm(false)}
-            ></div>
-            <div className="bg-white rounded-2xl w-full max-w-md relative z-60 shadow-2xl overflow-hidden">
-              <div className="p-8 text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4v2m0 4v2M7.08 6.47a9 9 0 1 1 9.84 0"
-                      />
+              
+              {anggotaList.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  Apakah Anda Yakin Menghapus Data Ini?
-                </h3>
-                <p className="text-gray-600 mb-8">
-                  Data struktur pemerintahaan akan dihapus secara permanen dan tidak dapat dipulihkan.
-                </p>
-
-                <div className="flex gap-3">
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Belum ada anggota</h4>
+                  <p className="text-gray-500 mb-6">Mulai dengan menambahkan anggota struktur pemerintahan</p>
                   <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={deleting}
-                    className="flex-1 px-4 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition-colors disabled:opacity-50"
+                    onClick={handleTambahAnggota}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Tidak
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {deleting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Menghapus...
-                      </>
-                    ) : (
-                      "Ya"
-                    )}
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Tambah Anggota Pertama
                   </button>
                 </div>
-              </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {anggotaList.map((anggota, index) => (
+                    <div key={anggota.id} className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 flex-1">
+                          {/* Order Badge */}
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-semibold">
+                              {anggota.urutan}
+                            </div>
+                          </div>
+                          
+                          {/* Avatar */}
+                          <div className="flex-shrink-0">
+                            {anggota.foto ? (
+                              <img
+                                className="h-14 w-14 rounded-full object-cover ring-2 ring-gray-200"
+                                src={anggota.foto}
+                                alt={anggota.nama}
+                              />
+                            ) : (
+                              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center ring-2 ring-gray-200">
+                                <svg className="h-7 w-7 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h4 className="text-lg font-semibold text-gray-900 truncate">{anggota.nama}</h4>
+                            </div>
+                            <p className="text-sm font-medium text-blue-600 mb-2">{anggota.jabatan}</p>
+                            <div className="flex flex-col space-y-1">
+                              {anggota.email && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <svg className="w-3 h-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                  </svg>
+                                  {anggota.email}
+                                </div>
+                              )}
+                              {anggota.noTelp && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <svg className="w-3 h-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                  </svg>
+                                  {anggota.noTelp}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div className="flex items-center space-x-1">
+                          {/* Move buttons */}
+                          <button
+                            onClick={() => handleMoveUp(index)}
+                            disabled={index === 0}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+                            title="Pindah ke atas"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(index)}
+                            disabled={index === anggotaList.length - 1}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+                            title="Pindah ke bawah"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Action buttons */}
+                          <div className="flex items-center space-x-2 ml-4">
+                            <button
+                              onClick={() => handleEditAnggota(anggota)}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-all duration-150"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => anggota.id && handleDeleteAnggota(anggota.id)}
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-700 transition-all duration-150"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Modal Form */}
+      {isModalOpen && (
+        <FormAnggotaModal
+          anggota={editingAnggota}
+          tipeStruktur={tipeStruktur}
+          onClose={() => setIsModalOpen(false)}
+          onSave={() => {
+            setIsModalOpen(false);
+            fetchData();
+          }}
+        />
+      )}
     </AdminLayout>
+  );
+}
+
+interface FormAnggotaModalProps {
+  anggota?: AnggotaStruktur | null;
+  tipeStruktur: TipeStruktur;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+function FormAnggotaModal({ anggota, tipeStruktur, onClose, onSave }: FormAnggotaModalProps) {
+  const [formData, setFormData] = useState<AnggotaStruktur>({
+    nama: anggota?.nama || '',
+    jabatan: anggota?.jabatan || '',
+    email: anggota?.email || '',
+    noTelp: anggota?.noTelp || '',
+    foto: anggota?.foto || '',
+    urutan: anggota?.urutan || 1,
+  });
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const imageUrl = await uploadImageToStorage(file, `struktur-${tipeStruktur}`);
+      setFormData({ ...formData, foto: imageUrl });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Gagal mengupload foto');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.nama.trim() || !formData.jabatan.trim()) {
+      alert('Nama dan Jabatan harus diisi');
+      return;
+    }
+
+    try {
+      await saveStrukturPemerintahan(tipeStruktur, formData, anggota?.id);
+      alert(anggota ? 'Data berhasil diperbarui' : 'Anggota berhasil ditambahkan');
+      onSave();
+    } catch (error) {
+      console.error('Error saving anggota:', error);
+      alert('Gagal menyimpan data');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto border border-white/20">
+        <h2 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-200/50 pb-3">
+          {anggota ? 'Edit Anggota' : 'Tambah Anggota Struktur Pemerintahan'}
+        </h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Upload Foto */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Foto Profil Anggota
+            </label>
+            <div className="flex items-center space-x-4">
+              {formData.foto && (
+                <img
+                  src={formData.foto}
+                  alt="Preview"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={uploading}
+                className="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50/80 file:backdrop-blur-sm file:text-blue-700 hover:file:bg-blue-100/80 transition-all duration-200"
+              />
+            </div>
+            {uploading && <p className="text-sm text-gray-500">Mengupload foto...</p>}
+          </div>
+
+          {/* Nama Lengkap */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nama Lengkap *
+            </label>
+            <input
+              type="text"
+              value={formData.nama}
+              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+              placeholder="Masukkan nama lengkap"
+              required
+            />
+          </div>
+
+          {/* Jabatan */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Jabatan *
+            </label>
+            <input
+              type="text"
+              value={formData.jabatan}
+              onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+              placeholder="Contoh: Kepala Desa, Sekretaris Desa"
+              required
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+              placeholder="example@email.com"
+            />
+          </div>
+
+          {/* No. Telp */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              No. Telp
+            </label>
+            <input
+              type="tel"
+              value={formData.noTelp}
+              onChange={(e) => setFormData({ ...formData, noTelp: e.target.value })}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+              placeholder="08xxxxxxxxxx"
+            />
+          </div>
+
+          {/* Urutan */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Urutan
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.urutan}
+              onChange={(e) => setFormData({ ...formData, urutan: parseInt(e.target.value) || 1 })}
+              className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex space-x-3 pt-6">
+            <button
+              type="submit"
+              disabled={uploading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              {uploading ? 'Menyimpan...' : 'Simpan'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 bg-white/80 backdrop-blur-sm text-gray-700 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50/80 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              Batal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

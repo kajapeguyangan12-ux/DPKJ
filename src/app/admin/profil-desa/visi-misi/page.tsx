@@ -6,12 +6,12 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../../../lib/firebase";
 import AdminLayout from "../../components/AdminLayout";
 import AdminHeaderCard, { AdminHeaderSearchBar, AdminHeaderAccount } from "../../../components/AdminHeaderCard";
-import { 
-  getVisiMisiContent, 
-  saveVisiMisiContent, 
-  uploadImageToStorage,
+import {
+  getVisiMisiContent,
+  saveVisiMisiContent,
   subscribeToVisiMisiContent,
-  type VisiMisiContent 
+  uploadImageToStorage,
+  type VisiMisiContent
 } from "../../../../lib/profilDesaService";
 
 export default function VisiMisiDesaAdminPage() {
@@ -19,14 +19,15 @@ export default function VisiMisiDesaAdminPage() {
   const [visiMisiData, setVisiMisiData] = useState<VisiMisiContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showImageReview, setShowImageReview] = useState<'visi' | 'misi' | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     visi: "",
+    visiImageUrl: "",
+    visiImageFile: null as File | null,
     misi: "",
+    misiImageUrl: "",
+    misiImageFile: null as File | null,
   });
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function VisiMisiDesaAdminPage() {
         const data = await getVisiMisiContent();
         setVisiMisiData(data);
       } catch (error) {
-        console.error('Error loading visi misi data:', error);
+        console.error("Error loading visi misi data:", error);
       } finally {
         setLoading(false);
       }
@@ -43,7 +44,6 @@ export default function VisiMisiDesaAdminPage() {
 
     loadVisiMisiData();
 
-    // Subscribe to real-time updates
     const unsubscribe = subscribeToVisiMisiContent((data) => {
       setVisiMisiData(data);
       setLoading(false);
@@ -56,9 +56,12 @@ export default function VisiMisiDesaAdminPage() {
     if (visiMisiData) {
       setFormData({
         visi: visiMisiData.visi,
+        visiImageUrl: visiMisiData.visiImageUrl,
+        visiImageFile: null,
         misi: visiMisiData.misi,
+        misiImageUrl: visiMisiData.misiImageUrl,
+        misiImageFile: null,
       });
-      setIsEditMode(true);
       setShowModal(true);
     }
   };
@@ -66,491 +69,430 @@ export default function VisiMisiDesaAdminPage() {
   const handleAdd = () => {
     setFormData({
       visi: "",
+      visiImageUrl: "",
+      visiImageFile: null,
       misi: "",
+      misiImageUrl: "",
+      misiImageFile: null,
     });
-    setSelectedFile(null);
-    setIsEditMode(false);
     setShowModal(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setFormData({
+      visi: "",
+      visiImageUrl: "",
+      visiImageFile: null,
+      misi: "",
+      misiImageUrl: "",
+      misiImageFile: null,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, imageType: 'visi' | 'misi') => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        setFormData((prev) => ({
+          ...prev,
+          [`${imageType}ImageFile`]: file,
+          [`${imageType}ImageUrl`]: imageUrl,
+        }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.visi.trim() || !formData.misi.trim()) {
+      alert("Visi dan Misi tidak boleh kosong");
+      return;
+    }
+
     setUploading(true);
 
     try {
-      let fotoUrl = visiMisiData?.fotoUrl || "";
+      let visiImageUrl = visiMisiData?.visiImageUrl || "";
+      let misiImageUrl = visiMisiData?.misiImageUrl || "";
 
-      if (selectedFile) {
-        fotoUrl = await uploadImageToStorage(selectedFile, "visi-misi");
+      // Upload Visi image if selected
+      if (formData.visiImageFile) {
+        visiImageUrl = await uploadImageToStorage(
+          formData.visiImageFile,
+          `visi-misi/visi-${Date.now()}`
+        );
+      } else if (formData.visiImageUrl && !formData.visiImageUrl.startsWith('data:')) {
+        visiImageUrl = formData.visiImageUrl;
+      }
+
+      // Upload Misi image if selected
+      if (formData.misiImageFile) {
+        misiImageUrl = await uploadImageToStorage(
+          formData.misiImageFile,
+          `visi-misi/misi-${Date.now()}`
+        );
+      } else if (formData.misiImageUrl && !formData.misiImageUrl.startsWith('data:')) {
+        misiImageUrl = formData.misiImageUrl;
       }
 
       await saveVisiMisiContent({
         visi: formData.visi,
+        visiImageUrl,
         misi: formData.misi,
-        fotoUrl,
+        misiImageUrl,
       });
 
-      setShowModal(false);
-      setSelectedFile(null);
-      
-      setFormData({
-        visi: "",
-        misi: "",
-      });
+      handleCloseModal();
+      alert("Data visi & misi berhasil disimpan!");
     } catch (error) {
       console.error("Error saving visi misi data:", error);
-      alert("Terjadi kesalahan saat menyimpan data.");
+      alert("Gagal menyimpan data visi & misi");
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async () => {
-    setDeleting(true);
+    if (
+      !confirm(
+        "Apakah Anda yakin ingin menghapus SEMUA data visi & misi? Tindakan ini tidak dapat dibatalkan."
+      )
+    ) {
+      return;
+    }
+
+    setUploading(true);
     try {
       await saveVisiMisiContent({
         visi: "",
+        visiImageUrl: "",
         misi: "",
-        fotoUrl: "",
+        misiImageUrl: "",
       });
-      
-      setShowDeleteConfirm(false);
+
       setVisiMisiData(null);
+      alert("Data visi & misi berhasil dihapus!");
     } catch (error) {
       console.error("Error deleting visi misi data:", error);
-      alert("Terjadi kesalahan saat menghapus data.");
+      alert("Gagal menghapus data visi & misi");
     } finally {
-      setDeleting(false);
+      setUploading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Memuat data visi & misi desa...</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/admin/login');
+      router.push("/admin/login");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50">
-        <AdminHeaderCard title="Kelola Visi & Misi Desa">
+      <div className="max-w-4xl mx-auto">
+        <AdminHeaderCard title="Visi & Misi Desa">
           <AdminHeaderSearchBar />
           <AdminHeaderAccount onLogout={handleLogout} />
         </AdminHeaderCard>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Navigation */}
-          <div className="mb-6">
-            <Link
-              href="/admin/profil-desa"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+        <div className="mb-6">
+          <Link
+            href="/admin/profil-desa"
+            className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 font-semibold hover:from-red-100 hover:to-red-200 hover:border-red-300 transition-all duration-300 shadow-sm hover:shadow-lg transform hover:scale-105"
+            title="Kembali ke halaman pemilihan Profil Desa"
+          >
+            <svg
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+              className="text-red-600 group-hover:text-red-700 transition-colors"
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Kembali ke Profil Desa
-            </Link>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="group-hover:text-red-800 transition-colors">Kembali ke Pemilihan</span>
+          </Link>
+        </div>
 
-          {/* Content Area */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Visi & Misi
-                </h2>
-                <div className="flex gap-3">
-                  {visiMisiData && (
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-                    >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+        <div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Memuat data visi & misi...</p>
+            </div>
+          ) : visiMisiData && visiMisiData.visi ? (
+            <div className="bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-200 shadow-lg overflow-hidden p-8">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-8">Visi & Misi Desa</h2>
+
+                {/* Visi Section */}
+                <div className="mb-8 pb-8 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Visi</h3>
+                  <p className="text-gray-700 text-base leading-relaxed mb-4">
+                    {visiMisiData.visi}
+                  </p>
+                  {visiMisiData.visiImageUrl && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowImageReview('visi')}
+                        className="inline-block rounded-lg overflow-hidden border-2 border-gray-300 hover:border-gray-400 transition-colors"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        <img
+                          src={visiMisiData.visiImageUrl}
+                          alt="Visi"
+                          className="h-32 w-auto object-cover"
                         />
-                      </svg>
-                      Hapus
-                    </button>
+                      </button>
+                    </div>
                   )}
+                </div>
+
+                {/* Misi Section */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Misi</h3>
+                  <p className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap mb-4">
+                    {visiMisiData.misi}
+                  </p>
+                  {visiMisiData.misiImageUrl && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowImageReview('misi')}
+                        className="inline-block rounded-lg overflow-hidden border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                      >
+                        <img
+                          src={visiMisiData.misiImageUrl}
+                          alt="Misi"
+                          className="h-32 w-auto object-cover"
+                        />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
                   <button
-                    onClick={visiMisiData ? handleEdit : handleAdd}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                    onClick={handleEdit}
+                    className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold flex items-center gap-1 hover:bg-gray-300 transition-colors transform hover:scale-105"
                   >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      {visiMisiData ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      ) : (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      )}
+                    Edit
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                     </svg>
-                    {visiMisiData ? "Edit" : "Buat"}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={uploading}
+                    className="px-4 py-2 rounded-lg bg-red-200 text-red-700 font-semibold flex items-center gap-1 hover:bg-red-300 transition-colors transform hover:scale-105 disabled:opacity-50"
+                  >
+                    Hapus
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                   </button>
                 </div>
               </div>
             </div>
-
-            <div className="p-6">
-              {visiMisiData ? (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Foto */}
-                    <div className="md:col-span-1">
-                      <div className="bg-gray-200 rounded-lg overflow-hidden shadow-md h-64 flex items-center justify-center">
-                        {visiMisiData.fotoUrl ? (
-                          <img
-                            src={visiMisiData.fotoUrl}
-                            alt="Visi & Misi"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="text-center">
-                            <svg
-                              className="w-16 h-16 text-gray-400 mx-auto mb-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <p className="text-gray-500">Foto</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="md:col-span-2 space-y-6">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          Visi & Misi Secara Singkat
-                        </h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          {visiMisiData.visi}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          Misi Desa
-                        </h3>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                          {visiMisiData.misi}
-                        </p>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4">
-                        <button
-                          onClick={handleEdit}
-                          className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium flex-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16H7a4 4 0 01-4-4V7a4 4 0 014-4h6m0 0v12m0-12L3 7m0 0h16"
-                            />
-                          </svg>
-                          Detail
-                        </button>
-                        <button
-                          onClick={handleEdit}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium flex-1"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                          Edit
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 mb-4">
-                    Belum ada data visi & misi desa.
-                  </p>
-                  <button
-                    onClick={handleAdd}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center mx-auto"
-                  >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Buat Visi & Misi
-                  </button>
-                </div>
-              )}
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl">
+              <div className="text-gray-400 mb-4">
+                <svg
+                  className="w-16 h-16 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-600 text-lg font-medium mb-2">Belum ada data visi & misi</p>
+              <p className="text-gray-500">Klik tombol &quot;Buat&quot; untuk menambah data visi & misi</p>
             </div>
+          )}
+
+          <div className="flex justify-end mt-8">
+            {!visiMisiData || !visiMisiData.visi ? (
+              <button
+                onClick={handleAdd}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                Buat
+                <svg
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            ) : null}
           </div>
         </div>
 
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-            <div className="bg-white rounded-lg w-full max-w-2xl relative z-60 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {isEditMode ? "Edit Visi & Misi Desa" : "Buat Visi & Misi Desa"}
-                  </h3>
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={handleCloseModal}
+            ></div>
+            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl z-60 p-10 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                {visiMisiData && visiMisiData.visi ? "Edit Visi & Misi Desa" : "Buat Visi & Misi Desa"}
+              </h2>
+
+              <form onSubmit={handleSubmit} className="space-y-7">
+                {/* Visi */}
+                <div>
+                  <label className="text-base font-semibold text-gray-700 block mb-3">
+                    Visi Desa
+                  </label>
+                  <textarea
+                    name="visi"
+                    value={formData.visi}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan visi desa..."
+                    className="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white transition-colors text-base"
+                    rows={4}
+                    required
+                  />
+                  <div className="mt-3">
+                    <label className="text-sm font-semibold text-gray-700 block mb-2">
+                      Foto Visi (Opsional)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, 'visi')}
+                      className="block w-full text-sm text-gray-600 file:px-4 file:py-2 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 transition-colors"
+                    />
+                    {formData.visiImageUrl && (
+                      <div className="mt-3 rounded-lg overflow-hidden border-2 border-gray-300">
+                        <img
+                          src={formData.visiImageUrl}
+                          alt="Preview Visi"
+                          className="max-h-40 w-auto"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Visi */}
-                  <div>
-                    <label className="block text-base font-medium text-gray-800 mb-3">
-                      Visi Desa
+                {/* Misi */}
+                <div>
+                  <label className="text-base font-semibold text-gray-700 block mb-3">
+                    Misi Desa
+                  </label>
+                  <textarea
+                    name="misi"
+                    value={formData.misi}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan misi desa..."
+                    className="w-full px-5 py-4 rounded-2xl border border-gray-300 bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white transition-colors text-base"
+                    rows={6}
+                    required
+                  />
+                  <div className="mt-3">
+                    <label className="text-sm font-semibold text-gray-700 block mb-2">
+                      Foto Misi (Opsional)
                     </label>
-                    <textarea
-                      value={formData.visi}
-                      onChange={(e) =>
-                        setFormData({ ...formData, visi: e.target.value })
-                      }
-                      placeholder="Masukkan Visi Desa"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-gray-700 placeholder-gray-500"
-                      rows={4}
-                      required
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, 'misi')}
+                      className="block w-full text-sm text-gray-600 file:px-4 file:py-2 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 transition-colors"
                     />
-                  </div>
-
-                  {/* Misi */}
-                  <div>
-                    <label className="block text-base font-medium text-gray-800 mb-3">
-                      Misi Desa
-                    </label>
-                    <textarea
-                      value={formData.misi}
-                      onChange={(e) =>
-                        setFormData({ ...formData, misi: e.target.value })
-                      }
-                      placeholder="Masukkan Misi Desa"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-gray-700 placeholder-gray-500"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Upload Foto */}
-                  <div>
-                    <label className="block text-base font-medium text-gray-800 mb-3">
-                      Upload Foto
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg p-3 text-gray-500">
-                        <span>{selectedFile ? selectedFile.name : "Tambah foto"}</span>
-                        <svg
-                          className="w-6 h-6 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
+                    {formData.misiImageUrl && (
+                      <div className="mt-3 rounded-lg overflow-hidden border-2 border-gray-300">
+                        <img
+                          src={formData.misiImageUrl}
+                          alt="Preview Misi"
+                          className="max-h-40 w-auto"
+                        />
                       </div>
-                    </div>
+                    )}
                   </div>
+                </div>
 
-                  {/* Button Group */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-medium transition-colors"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={uploading}
-                      className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
-                    >
-                      {uploading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                          Menyimpan...
-                        </div>
-                      ) : (
-                        isEditMode ? "Simpan Perubahan" : "Simpan"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                {/* Buttons */}
+                <div className="flex gap-4 pt-6">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    disabled={uploading}
+                    className="flex-1 px-6 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-base disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold transition-all duration-300 transform hover:scale-105 text-base disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        {visiMisiData && visiMisiData.visi ? "Memperbarui..." : "Menyimpan..."}
+                      </>
+                    ) : (
+                      <span>
+                        {visiMisiData && visiMisiData.visi ? "Perbarui" : "Simpan"}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
+        {/* Image Review Modal */}
+        {showImageReview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)}></div>
-            <div className="bg-white rounded-2xl w-full max-w-md relative z-60 shadow-2xl overflow-hidden">
-              <div className="p-8 text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-red-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4v2m0 4v2M7.08 6.47a9 9 0 1 1 9.84 0"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-800 mb-3">
-                  Apakah Anda Yakin Menghapus Data Ini?
-                </h3>
-                <p className="text-gray-600 mb-8">
-                  Data visi & misi desa akan dihapus secara permanen dan tidak dapat dipulihkan.
-                </p>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={deleting}
-                    className="flex-1 px-4 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold transition-colors disabled:opacity-50"
-                  >
-                    Tidak
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 px-4 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {deleting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Menghapus...
-                      </>
-                    ) : (
-                      "Ya"
-                    )}
-                  </button>
-                </div>
-              </div>
+            <div
+              className="absolute inset-0 bg-black/60"
+              onClick={() => setShowImageReview(null)}
+            ></div>
+            <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden z-60 max-w-2xl max-h-[80vh]">
+              <button
+                onClick={() => setShowImageReview(null)}
+                className="absolute top-4 right-4 z-70 bg-white/90 hover:bg-white rounded-full p-2 transition-colors"
+              >
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <img
+                src={showImageReview === 'visi' ? visiMisiData?.visiImageUrl : visiMisiData?.misiImageUrl}
+                alt={`Review ${showImageReview}`}
+                className="w-full h-auto"
+              />
             </div>
           </div>
         )}

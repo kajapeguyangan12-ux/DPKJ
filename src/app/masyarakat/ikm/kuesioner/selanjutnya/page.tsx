@@ -64,7 +64,8 @@ export default function KuesionerSelanjutnyaPage() {
         <HeaderCard 
           title="Indeks Kepuasan Masyarakat" 
           subtitle="Survey Kepuasan"
-          backUrl="/masyarakat/ikm/kuesioner" 
+          backUrl="/masyarakat/ikm/kuesioner"
+          showBackButton={true}
         />
 
         {/* Form Section */}

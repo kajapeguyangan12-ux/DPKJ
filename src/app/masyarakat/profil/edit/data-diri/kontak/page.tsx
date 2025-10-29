@@ -35,11 +35,7 @@ export default function KontakPage() {
   return (
     <main className="min-h-[100svh] bg-merah-putih animate-bg-pan text-gray-800">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
-        <HeaderCard title="Kontak" />
-
-        <div className="mb-3">
-          <Link href="/masyarakat/profil/edit/data-diri" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-lg shadow-sm">‹</Link>
-        </div>
+        <HeaderCard title="Kontak" backUrl="/masyarakat/profil/edit/data-diri" showBackButton={true} />
 
         {/* Info Section */}
         <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">

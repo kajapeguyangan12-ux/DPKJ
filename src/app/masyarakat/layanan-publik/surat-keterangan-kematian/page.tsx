@@ -71,6 +71,7 @@ export default function SuratKeteranganKematianPage() {
           title="Surat Keterangan Kematian"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

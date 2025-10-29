@@ -113,6 +113,7 @@ export default function KtpElektronikDenpasarPage() {
           title="KTP Elektronik Denpasar"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

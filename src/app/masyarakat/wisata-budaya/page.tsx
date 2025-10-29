@@ -13,6 +13,7 @@ export default function WisataBudayaPage() {
           title="Wisata & Budaya"
           subtitle="Jelajahi Kekayaan Desa"
           backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
         {/* Main Content Cards */}

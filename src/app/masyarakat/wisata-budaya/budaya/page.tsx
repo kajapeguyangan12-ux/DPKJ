@@ -85,6 +85,7 @@ export default function BudayaPage() {
           title="Budaya"
           subtitle="Warisan Tradisional"
           backUrl="/masyarakat/wisata-budaya"
+          showBackButton={true}
         />
 
         {/* Search Bar */}

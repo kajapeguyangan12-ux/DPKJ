@@ -89,6 +89,7 @@ export default function LayananPublikPage() {
           title="Layanan Publik" 
           subtitle="Administrasi & Perizinan"
           backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
         <section className="mb-6 space-y-4">

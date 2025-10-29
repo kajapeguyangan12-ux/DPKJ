@@ -45,6 +45,7 @@ export default function ProfilDesaPage() {
           title="Profil Desa" 
           subtitle="Informasi Desa"
           backUrl="/masyarakat/home"
+          showBackButton={true}
         />
 
         {/* Menu Items */}

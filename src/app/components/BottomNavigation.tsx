@@ -76,38 +76,38 @@ function UserIcon({ className }: IconProps) {
 
 export default function BottomNavigation() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md border-t bg-white/90 px-6 py-2 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] backdrop-blur">
-      <ul className="grid grid-cols-4 text-center text-xs text-gray-700">
+    <nav className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md border-t bg-white/90 px-3 sm:px-4 md:px-6 py-1 sm:py-2 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] backdrop-blur">
+      <ul className="grid grid-cols-4 text-center gap-1 text-[10px] sm:text-xs text-gray-700">
         <li>
-          <Link href="/masyarakat/home" className="grid place-items-center gap-1">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-500 text-white shadow-lg">
-              <HomeIcon className="h-5 w-5" />
+          <Link href="/masyarakat/home" className="grid place-items-center gap-0.5 sm:gap-1 py-1">
+            <span className="grid h-10 w-10 sm:h-12 sm:w-12 place-items-center rounded-full bg-blue-500 text-white shadow-lg">
+              <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
-            <span className="font-medium">Beranda</span>
+            <span className="font-medium line-clamp-1">Beranda</span>
           </Link>
         </li>
         <li>
-          <Link href="/masyarakat/riwayat" className="grid place-items-center gap-1">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-purple-500 text-white shadow-lg">
-              <HistoryIcon className="h-5 w-5" />
+          <Link href="/masyarakat/riwayat" className="grid place-items-center gap-0.5 sm:gap-1 py-1">
+            <span className="grid h-10 w-10 sm:h-12 sm:w-12 place-items-center rounded-full bg-purple-500 text-white shadow-lg">
+              <HistoryIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
-            <span className="font-medium">Riwayat</span>
+            <span className="font-medium line-clamp-1">Riwayat</span>
           </Link>
         </li>
         <li>
-          <Link href="/masyarakat/notifikasi" className="grid place-items-center gap-1">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-orange-500 text-white shadow-lg">
-              <BellIcon className="h-5 w-5" />
+          <Link href="/masyarakat/notifikasi" className="grid place-items-center gap-0.5 sm:gap-1 py-1">
+            <span className="grid h-10 w-10 sm:h-12 sm:w-12 place-items-center rounded-full bg-orange-500 text-white shadow-lg">
+              <BellIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
-            <span className="font-medium">Notifikasi</span>
+            <span className="font-medium line-clamp-1">Notifikasi</span>
           </Link>
         </li>
         <li>
-          <Link href="/masyarakat/profil" className="grid place-items-center gap-1">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-green-500 text-white shadow-lg">
-              <UserIcon className="h-5 w-5" />
+          <Link href="/masyarakat/profil" className="grid place-items-center gap-0.5 sm:gap-1 py-1">
+            <span className="grid h-10 w-10 sm:h-12 sm:w-12 place-items-center rounded-full bg-green-500 text-white shadow-lg">
+              <UserIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
-            <span className="font-medium">Profil</span>
+            <span className="font-medium line-clamp-1">Profil</span>
           </Link>
         </li>
       </ul>

@@ -85,6 +85,7 @@ export default function WisataPage() {
           title="Wisata"
           subtitle="Destinasi Menarik"
           backUrl="/masyarakat/wisata-budaya"
+          showBackButton={true}
         />
 
         {/* Search Bar */}

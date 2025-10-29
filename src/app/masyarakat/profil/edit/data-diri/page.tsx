@@ -8,11 +8,7 @@ export default function DataDiriPage() {
   return (
     <main className="min-h-[100svh] bg-merah-putih animate-bg-pan text-gray-800">
       <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
-        <HeaderCard title="Data Diri" />
-
-        <div className="mb-3">
-          <Link href="/masyarakat/profil/edit" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-lg shadow-sm">‹</Link>
-        </div>
+        <HeaderCard title="Data Diri" backUrl="/masyarakat/profil/edit" showBackButton={true} />
 
         {/* Data Diri Kependudukan */}
         <section className="mb-3">

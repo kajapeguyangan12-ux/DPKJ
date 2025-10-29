@@ -121,6 +121,7 @@ export default function KartuIdentitasAnakPage() {
           title="Kartu Identitas Anak"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik/pelayanan-taring-dukcapil"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

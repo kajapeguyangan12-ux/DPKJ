@@ -72,6 +72,7 @@ export default function SuratKeteranganBelumNikahPage() {
           title="Surat Keterangan Belum Nikah"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

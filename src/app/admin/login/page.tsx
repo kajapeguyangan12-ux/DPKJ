@@ -25,13 +25,13 @@ export default function AdminLogin() {
       <div className="bg-white shadow-lg rounded-lg flex w-full max-w-3xl overflow-hidden">
         {/* Left Side */}
         <div className="w-1/2 bg-gradient-to-br from-red-400 to-red-200 flex flex-col items-center justify-center p-8">
-          <img src="/Logo/LOGO_DPKJ.png" alt="Logo DPKJ" className="w-32 mb-4" />
+          <img src="/logo/LOGO_DPKJ.png" alt="Logo DPKJ" className="w-40 mb-4 object-contain" />
           <h2 className="text-xl font-bold text-white mb-2">Dauh Puri Kaja</h2>
           <p className="text-white text-lg font-semibold">Selamat Datang Di Aplikasi SIGEDE</p>
         </div>
         {/* Right Side */}
         <div className="w-1/2 flex flex-col justify-center items-center p-8">
-          <img src="/Logo/Logo_BGD.png" alt="Logo BGD" className="w-24 mb-4" />
+          <img src="/logo/Logo_BGD1.png" alt="Logo BGD" className="w-32 sm:w-40 mb-6 object-contain" />
           <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             Silakan Login Untuk Masuk Ke Sistem SI GEDE
           </h1>

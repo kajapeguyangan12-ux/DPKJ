@@ -70,6 +70,7 @@ export default function SuratKeteranganBelumBekerjaPage() {
           title="Surat Keterangan Belum Bekerja"
           subtitle="Layanan Publik"
           backUrl="/masyarakat/layanan-publik"
+          showBackButton={true}
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">

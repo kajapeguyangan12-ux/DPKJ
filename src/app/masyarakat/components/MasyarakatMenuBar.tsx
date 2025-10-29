@@ -159,22 +159,26 @@ export default function MasyarakatMenuBar({ columnsCount = 5 }: MasyarakatMenuBa
   }
 
   return (
-    <div className="rounded-3xl bg-white/95 p-6 shadow-xl ring-1 ring-gray-200 backdrop-blur-sm">
-      <div className={`grid gap-3 text-center text-xs`} style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
-        {menuItems.map((item) => (
-          <Link key={item.title} href={item.href} className="group">
-            <div className="flex flex-col items-center">
-              <div
-                className={`mb-3 grid h-14 w-14 place-items-center rounded-3xl bg-gradient-to-br ${item.gradient} text-xl text-white shadow-xl ring-2 ring-white/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:ring-4 group-hover:ring-white/40 group-active:scale-95`}
-              >
-                {item.icon}
+    <div className="rounded-3xl bg-white/95 p-3 sm:p-4 md:p-6 shadow-xl ring-1 ring-gray-200 backdrop-blur-sm">
+      <div className={`grid gap-2 sm:gap-3 md:gap-4 text-center text-xs`}>
+        <div className="grid gap-2 sm:gap-3 md:gap-4 auto-rows-max" style={{ 
+          gridTemplateColumns: `repeat(auto-fit, minmax(60px, 1fr))`
+        }}>
+          {menuItems.map((item) => (
+            <Link key={item.title} href={item.href} className="group">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`mb-2 sm:mb-3 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-3xl bg-gradient-to-br ${item.gradient} text-lg sm:text-xl text-white shadow-xl ring-2 ring-white/30 transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl group-hover:ring-4 group-hover:ring-white/40 group-active:scale-95 active:scale-95`}
+                >
+                  {item.icon}
+                </div>
+                <span className="text-center font-bold leading-tight text-gray-800 text-[10px] sm:text-xs px-1 line-clamp-2">
+                  {item.title}
+                </span>
               </div>
-              <span className="text-center font-bold leading-tight text-gray-800 text-[10px]">
-                {item.title}
-              </span>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

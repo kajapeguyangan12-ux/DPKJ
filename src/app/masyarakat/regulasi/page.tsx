@@ -1,145 +1,260 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from '../../components/BottomNavigation';
+import { getRegulasiDesa, type RegulasiDesa } from '../../../lib/regulasiService';
+import { X, Eye } from 'lucide-react';
 
 export default function RegulasiPage() {
-  const [status, setStatus] = useState(false);
-  const [showMore, setShowMore] = useState(false);
+  const [regulasiData, setRegulasiData] = useState<RegulasiDesa[]>([]);
+  const [selectedRegulasi, setSelectedRegulasi] = useState<RegulasiDesa | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const regulasiData = {
-    nama: "Nama Regulasi",
-    deskripsi: "Deskripsi Regulasi",
-    status: status,
-    detailLengkap: `Peraturan Desa Nomor 01 Tahun 2024 tentang Pengelolaan Sampah dan Kebersihan Lingkungan Desa Peguyangan Kaja.
+  useEffect(() => {
+    const fetchRegulasiData = async () => {
+      try {
+        const data = await getRegulasiDesa();
+        // Filter hanya regulasi yang aktif
+        const activeRegulasi = data.filter(item => item.status === 'aktif');
+        setRegulasiData(activeRegulasi);
+      } catch (error) {
+        console.error('Error fetching regulasi data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    Pasal 1: Ketentuan Umum
-    Dalam peraturan ini yang dimaksud dengan:
-    1. Desa adalah Desa Peguyangan Kaja
-    2. Pemerintah Desa adalah Kepala Desa beserta perangkat desa
-    3. Sampah adalah sisa kegiatan sehari-hari manusia atau proses alam
+    fetchRegulasiData();
+  }, []);
 
-    Pasal 2: Tujuan
-    Peraturan ini bertujuan untuk:
-    a. Mewujudkan lingkungan desa yang bersih dan sehat
-    b. Meningkatkan kesadaran masyarakat tentang pengelolaan sampah
-    c. Mengatur pembuangan dan pengolahan sampah yang benar
-
-    Pasal 3: Ruang Lingkup
-    Peraturan ini mengatur tentang:
-    1. Pengelolaan sampah rumah tangga
-    2. Pengelolaan sampah dari usaha ekonomi
-    3. Pengolahan sampah menjadi barang berguna
-    4. Sanksi atas pelanggaran pengelolaan sampah
-
-    Pasal 4: Kewajiban Masyarakat
-    Setiap masyarakat desa wajib:
-    a. Memilah sampah organik dan anorganik
-    b. Membuang sampah pada tempat yang telah disediakan
-    c. Mengolah sampah yang dapat didaur ulang
-    d. Berpartisipasi dalam kegiatan kerja bakti kebersihan
-
-    Pasal 5: Sanksi
-    1. Pelanggaran ringan: Teguran lisan dari petugas
-    2. Pelanggaran sedang: Denda administratif Rp 50.000
-    3. Pelanggaran berat: Denda administratif Rp 100.000
-
-    Pasal 6: Ketentuan Penutup
-    Peraturan ini mulai berlaku pada tanggal diundangkan dan dapat dievaluasi sesuai kebutuhan.`
+  const openDetailModal = (regulasi: RegulasiDesa) => {
+    setSelectedRegulasi(regulasi);
+    setShowDetailModal(true);
   };
 
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedRegulasi(null);
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-[100svh] bg-gradient-to-b from-red-50 to-gray-50 text-gray-800">
+        <div className="mx-auto w-full max-w-md px-3 sm:px-4 pb-24 sm:pb-28 pt-4">
+          <HeaderCard 
+            title="Regulasi Desa" 
+            subtitle="Peraturan & Kebijakan"
+            backUrl="/masyarakat/home"
+            showBackButton={true}
+          />
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-500">Memuat data regulasi...</div>
+          </div>
+        </div>
+        <BottomNavigation />
+      </main>
+    );
+  }
+
+  if (regulasiData.length === 0) {
+    return (
+      <main className="min-h-[100svh] bg-gradient-to-b from-red-50 to-gray-50 text-gray-800">
+        <div className="mx-auto w-full max-w-md px-3 sm:px-4 pb-24 sm:pb-28 pt-4">
+          <HeaderCard 
+            title="Regulasi Desa" 
+            subtitle="Peraturan & Kebijakan"
+            backUrl="/masyarakat/home"
+            showBackButton={true}
+          />
+          <div className="flex justify-center items-center py-8">
+            <div className="text-center">
+              <div className="text-gray-500 mb-2">Belum ada regulasi yang tersedia</div>
+              <div className="text-sm text-gray-400">Regulasi akan ditampilkan setelah ditambahkan oleh admin</div>
+            </div>
+          </div>
+        </div>
+        <BottomNavigation />
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-[100svh] bg-red-50 text-gray-800">
-      <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
-        <HeaderCard 
-          title="Regulasi Desa" 
-          subtitle="Peraturan & Kebijakan"
-          backUrl="/masyarakat/home"
-        />
+    <>
+      <main className="min-h-[100svh] bg-gradient-to-b from-red-50 to-gray-50 text-gray-800">
+        <div className="mx-auto w-full max-w-md px-3 sm:px-4 pb-24 sm:pb-28 pt-4">
+          <HeaderCard 
+            title="Regulasi Desa" 
+            subtitle="Peraturan & Kebijakan"
+            backUrl="/masyarakat/home"
+            showBackButton={true}
+          />
 
-        {/* Regulation Content */}
-        <div className="space-y-4">
-          {/* Nama Regulasi Section */}
-          <div className="rounded-3xl bg-white/90 backdrop-blur-sm p-4 shadow-xl ring-1 ring-red-200">
-            <label className="block text-sm font-semibold text-gray-800 mb-2">
-              Nama Regulasi
-            </label>
-            <div className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm">
-              {regulasiData.nama}
-            </div>
-          </div>
+          {/* Regulasi Cards */}
+          <div className="space-y-3 sm:space-y-4">
+            {regulasiData.map((regulasi) => (
+              <div key={regulasi.id} className="rounded-3xl bg-white/90 backdrop-blur-sm p-4 shadow-xl ring-1 ring-red-200">
+                <div className="space-y-4">
+                  {/* Judul Regulasi */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-1">Nama Regulasi</h3>
+                    <p className="text-xs sm:text-sm text-gray-700 overflow-hidden text-ellipsis line-clamp-2">{regulasi.judul}</p>
+                  </div>
 
-          {/* Deskripsi Regulasi Section */}
-          <div className="rounded-3xl bg-white/90 backdrop-blur-sm p-4 shadow-xl ring-1 ring-red-200">
-            <label className="block text-sm font-semibold text-gray-800 mb-2">
-              Deskripsi Regulasi
-            </label>
-            <div className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm min-h-[80px]">
-              {regulasiData.deskripsi}
-            </div>
-          </div>
+                  {/* Deskripsi Regulasi */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-1">Deskripsi Regulasi</h3>
+                    <p className="text-xs sm:text-sm text-gray-700 overflow-hidden text-ellipsis line-clamp-3">{regulasi.deskripsi}</p>
+                  </div>
 
-          {/* Status Section */}
-          <div className="rounded-3xl bg-white/90 backdrop-blur-sm p-4 shadow-xl ring-1 ring-red-200">
-            <label className="block text-sm font-semibold text-gray-800 mb-3">
-              Status :
-            </label>
-
-            {/* Toggle Switch */}
-            <div className="flex items-center justify-center">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  id="status-toggle"
-                  checked={status}
-                  onChange={(e) => setStatus(e.target.checked)}
-                  className="sr-only"
-                />
-                <label
-                  htmlFor="status-toggle"
-                  className={`flex items-center cursor-pointer rounded-full p-1 transition-colors ${
-                    status ? 'bg-green-500' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`block h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
-                      status ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </label>
-              </div>
-              <span className="ml-3 text-sm font-medium">
-                {status ? 'Aktif' : 'Tidak Aktif'}
-              </span>
-            </div>
-          </div>
-
-          {/* Show More Button */}
-          <div className="text-center">
-            <button
-              onClick={() => setShowMore(!showMore)}
-              className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-gray-800 shadow-sm ring-1 ring-gray-300 hover:bg-gray-50"
-            >
-              {showMore ? 'Tutup Detail' : 'Tampilkan Lebih Banyak'}
-            </button>
-          </div>
-
-          {/* Detailed Content (shown when expanded) */}
-          {showMore && (
-            <div className="rounded-3xl bg-white/90 backdrop-blur-sm p-4 shadow-xl ring-1 ring-red-200">
-              <div className="rounded-2xl bg-gray-50 p-6 shadow-inner">
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                  {regulasiData.detailLengkap}
+                  {/* Status dan Detail Button */}
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-800 mb-1">Status :</h3>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        regulasi.status === 'aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {regulasi.status === 'aktif' ? 'Aktif' : 'Tidak Aktif'}
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={() => openDetailModal(regulasi)}
+                      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+                    >
+                      <Eye size={20} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
 
-      <BottomNavigation />
-    </main>
+        <BottomNavigation />
+      </main>
+
+      {/* Detail Modal */}
+      {showDetailModal && selectedRegulasi && (
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={closeDetailModal}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-sm rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl ring-1 ring-white/20 animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-gray-200/50 p-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-800">Detail Regulasi</h2>
+              <button
+                onClick={closeDetailModal}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100/80 backdrop-blur-sm text-gray-600 hover:bg-gray-200/80 transition-all duration-200 hover:scale-105"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div className="space-y-4">
+                {/* Judul */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Judul Regulasi</label>
+                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                    {selectedRegulasi.judul}
+                  </div>
+                </div>
+
+                {/* Nomor dan Tahun */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Nomor</label>
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                      {selectedRegulasi.nomor}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Tahun</label>
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                      {selectedRegulasi.tahun}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tentang */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Tentang</label>
+                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                    {selectedRegulasi.tentang}
+                  </div>
+                </div>
+
+                {/* Deskripsi */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Deskripsi Regulasi</label>
+                  <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                    {selectedRegulasi.deskripsi}
+                  </div>
+                </div>
+
+                {/* Status dan Tanggal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Status</label>
+                    <div className="flex items-center">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        selectedRegulasi.status === 'aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedRegulasi.status === 'aktif' ? 'Aktif' : 'Tidak Aktif'}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Tanggal Ditetapkan</label>
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                      {new Date(selectedRegulasi.tanggalDitetapkan).toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Isi Lengkap */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Isi Lengkap Regulasi</label>
+                  <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-700 leading-relaxed whitespace-pre-line max-h-60 overflow-y-auto">
+                    {selectedRegulasi.isiLengkap}
+                  </div>
+                </div>
+
+                {/* PDF Download */}
+                {selectedRegulasi.filePdf && (
+                  <div className="text-center pt-4">
+                    <a
+                      href={selectedRegulasi.filePdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                      📄 Unduh PDF
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
