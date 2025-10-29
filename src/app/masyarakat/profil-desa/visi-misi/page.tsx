@@ -9,8 +9,8 @@ export default function VisiMisiPage() {
 
   const visiContent = {
     icon: "🎯",
-    title: "Visi Desa Peguyangan Kaja",
-    content: `Terwujudnya Desa Peguyangan Kaja yang maju, mandiri, dan sejahtera melalui pengembangan potensi lokal berbasis teknologi informasi dan kearifan lokal Bali.
+    title: "Visi Desa Dauh Puri Kaja",
+    content: `Terwujudnya Desa Dauh Puri Kaja yang maju, mandiri, dan sejahtera melalui pengembangan potensi lokal berbasis teknologi informasi dan kearifan lokal Bali.
 
     Pencapaian visi ini didasarkan pada:
     • Peningkatan kualitas sumber daya manusia
@@ -22,7 +22,7 @@ export default function VisiMisiPage() {
 
   const misiContent = {
     icon: "🏆",
-    title: "Misi Desa Peguyangan Kaja",
+    title: "Misi Desa Dauh Puri Kaja",
     content: `1. Meningkatkan kualitas pendidikan dan kesehatan masyarakat
     2. Mengembangkan potensi ekonomi lokal melalui UMKM dan industri kreatif
     3. Melestarikan dan mengembangkan seni, budaya, dan adat istiadat Bali

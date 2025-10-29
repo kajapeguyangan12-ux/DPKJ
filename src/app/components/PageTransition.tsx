@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -41,13 +40,6 @@ export default function PageTransition({ children }: { children: React.ReactNode
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="flex items-center space-x-3 bg-white/90 backdrop-blur-sm rounded-full px-4 py-3 shadow-lg border border-gray-200">
             <div className="w-5 h-5 border-2 border-red-200 border-t-red-500 rounded-full animate-spin"></div>
-            <Image
-              src="/logo/Logo_BGD.png"
-              alt="Loading"
-              width={20}
-              height={10}
-              className="brightness-0"
-            />
           </div>
         </div>
       )}

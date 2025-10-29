@@ -34,28 +34,28 @@ export default function SejarahDesaPage() {
             <div className="rounded-2xl bg-gray-50 p-6 shadow-inner">
               <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
                 <p>
-                  Desa Peguyangan Kaja memiliki sejarah yang panjang dan kaya akan nilai-nilai
+                  Desa Dauh Puri Kaja memiliki sejarah yang panjang dan kaya akan nilai-nilai
                   budaya Bali. Desa ini diperkirakan sudah ada sejak zaman kerajaan Bali kuno,
                   sekitar abad XIV Masehi.
                 </p>
 
                 <p>
-                  <strong>Asal-usul nama "Peguyangan Kaja":</strong><br/>
-                  Kata "Peguyangan" berasal dari bahasa Bali yang berarti "hutan kecil" atau
-                  "tempat yang teduh", sedangkan "Kaja" berarti "utara". Sehingga Peguyangan
-                  Kaja dapat diartikan sebagai "hutan kecil di utara".
+                  <strong>Asal-usul nama "Dauh Puri Kaja":</strong><br/>
+                  Kata "Dauh Puri" berasal dari bahasa Bali yang berarti "di sebelah puri" dan
+                  "Kaja" berarti "utara". Sehingga Dauh Puri Kaja dapat diartikan sebagai 
+                  "di sebelah utara puri" atau tempat yang berada di utara istana.
                 </p>
 
                 <p>
                   <strong>Perkembangan Historis:</strong><br/>
-                  Pada masa kolonial Belanda, Desa Peguyangan Kaja menjadi salah satu desa
+                  Pada masa kolonial Belanda, Desa Dauh Puri Kaja menjadi salah satu desa
                   yang aktif dalam pergerakan kemerdekaan. Banyak tokoh-tokoh masyarakat
                   yang terlibat dalam organisasi perjuangan melawan penjajahan.
                 </p>
 
                 <p>
                   <strong>Pascakemerdekaan:</strong><br/>
-                  Setelah Indonesia merdeka, Desa Peguyangan Kaja mengalami perkembangan
+                  Setelah Indonesia merdeka, Desa Dauh Puri Kaja mengalami perkembangan
                   yang pesat. Pada tahun 1970-an, desa ini mulai berkembang menjadi daerah
                   wisata dengan berbagai atraksi budaya yang menjadi daya tarik wisatawan
                   domestik maupun mancanegara.
@@ -63,7 +63,7 @@ export default function SejarahDesaPage() {
 
                 <p>
                   <strong>Era Modern:</strong><br/>
-                  Memasuki era digital, Desa Peguyangan Kaja terus beradaptasi dengan
+                  Memasuki era digital, Desa Dauh Puri Kaja terus beradaptasi dengan
                   perkembangan teknologi. Pemerintah desa aktif mengembangkan sistem
                   informasi desa digital untuk meningkatkan pelayanan kepada masyarakat
                   dan melestarikan nilai-nilai budaya lokal.
@@ -71,13 +71,13 @@ export default function SejarahDesaPage() {
 
                 <p>
                   <strong>Peninggalan Sejarah:</strong><br/>
-                  Desa ini memiliki beberapa situs bersejarah seperti Pura Peguyangan,
+                  Desa ini memiliki beberapa situs bersejarah seperti Pura Dauh Puri Kaja,
                   Pasar Seni Tradisional, dan beberapa rumah adat Bali yang masih
                   lestari hingga saat ini.
                 </p>
 
                 <p>
-                  Hingga saat ini, Desa Peguyangan Kaja tetap mempertahankan identitasnya
+                  Hingga saat ini, Desa Dauh Puri Kaja tetap mempertahankan identitasnya
                   sebagai desa yang kaya akan nilai-nilai budaya, seni, dan tradisi Bali
                   sambil terus berkembang mengikuti perkembangan zaman modern.
                 </p>

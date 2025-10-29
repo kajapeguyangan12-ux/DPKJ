@@ -14,9 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SiGede Dauh Puri Kaja",
+  title: "SiGeDe",
   description: "Aplikasi Desa Dauh Puri Kaja",
   viewport: "width=device-width, initial-scale=1",
+  icons: {
+    icon: [
+      {
+        url: "/vercel.svg",
+        sizes: "any",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ import HeaderCard from "../../components/HeaderCard";
 import { useState } from "react";
 import BottomNavigation from '../../components/BottomNavigation';
 
-const DesaLogo = "/logo/Lambang_Desa_Peguyangan_Kaja.png";
+const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
 
 export default function RiwayatMasyarakatPage() {

@@ -6,7 +6,7 @@ import HeaderCard from '../../../components/HeaderCard';
 import Link from "next/link";
 import Image from "next/image";
 
-const DesaLogo = "/logo/Lambang_Desa_Peguyangan_Kaja.png";
+const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
 
 type FormData = {

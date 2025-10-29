@@ -5,7 +5,7 @@ import Link from "next/link";
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from '../../components/BottomNavigation';
 
-const DesaLogo = "/logo/Lambang_Desa_Peguyangan_Kaja.png";
+const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
 
 const sample = [

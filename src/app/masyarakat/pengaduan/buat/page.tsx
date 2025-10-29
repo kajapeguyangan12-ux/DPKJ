@@ -5,7 +5,7 @@ import BottomNavigation from '../../../components/BottomNavigation';
 import Image from "next/image";
 import Link from "next/link";
 
-const DesaLogo = "/logo/Lambang_Desa_Peguyangan_Kaja.png";
+const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
 
 type FormData = {

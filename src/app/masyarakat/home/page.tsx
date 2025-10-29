@@ -2,6 +2,7 @@
 
 import type { JSX } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCurrentUser } from "../lib/useCurrentUser";
 import BottomNavigation from '../../components/BottomNavigation';
 import {
@@ -27,9 +28,9 @@ import {
   Bell,
   Store,
 } from "lucide-react";
-import HeaderCard from "../../components/HeaderCard";
 
 const DesaLogo = "/logo/LOGO_DPKJ.png";
+const BGDLogo = "/logo/BDG1.png";
 
 type MenuItem = {
   title: string;
@@ -162,12 +163,59 @@ export default function HomeMasyarakatMobile() {
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-800">
       <div className="mx-auto w-full max-w-md px-4 pb-20 pt-4">
-        {/* Header Card */}
-        <HeaderCard 
-          title="Beranda"
-          subtitle="Sistem Informasi Desa"
-          backUrl="/masyarakat/home"
-        />
+        {/* Custom Header Card with Logo in Back Button */}
+        <div className="mb-6 overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-gray-200/50 backdrop-blur-xl">
+          <div className="relative">
+            {/* Enhanced Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-red-600 to-red-700 opacity-95"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-white/10"></div>
+            
+            {/* Subtle Pattern Overlay */}
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 0%, transparent 50%), 
+                               radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
+            }}></div>
+
+            <div className="relative z-10 flex items-center justify-between px-6 py-4">
+              {/* Left Section - Logo Only with White Background (Not clickable) */}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
+                <Image
+                  src={BGDLogo}
+                  alt="BGD Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              {/* Center Section - Title & Subtitle */}
+              <div className="text-center">
+                <h1 className="text-lg font-bold text-white tracking-wide">
+                  Beranda
+                </h1>
+                <p className="text-xs text-white/80 font-medium mt-0.5">
+                  Sistem Informasi Desa
+                </p>
+              </div>
+
+              {/* Right Section - Logo */}
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20">
+                <Image
+                  src={DesaLogo}
+                  alt="Dauh Puri Kaja"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Bottom Accent Line */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+          </div>
+        </div>
 
         {/* Welcome Section */}
         <section className="mb-6 rounded-3xl bg-gradient-to-r from-slate-600 to-slate-700 p-6 text-white shadow-xl">

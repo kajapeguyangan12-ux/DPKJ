@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import HeaderCard from "../../components/HeaderCard";
 
-const DesaLogo = "/logo/Lambang_Desa_Peguyangan_Kaja.png";
+const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
 
 type FilterType = "All" | "Infrastruktur" | "Keamanan" | "Lingkungan" | "Pelayanan" | "Lainnya";
