@@ -61,36 +61,54 @@ export default function LoginMasyarakatPage() {
     try {
       console.log('🔐 MASYARAKAT LOGIN: Attempting login with identifier:', identifier);
       
+      // Add timeout to prevent infinite loading
+      const loginTimeout = setTimeout(() => {
+        console.error('⏱️ Login timeout');
+        setIsLoading(false);
+        setError('Login timeout. Silakan coba lagi.');
+      }, 15000); // 15 second timeout
+
       await login({
         userId: identifier,
         password: password
       });
+
+      clearTimeout(loginTimeout);
 
       // Check if user is masyarakat (non-admin) after successful login
       const storedUser = localStorage.getItem('sigede_auth_user');
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         
+        console.log('👤 User data loaded:', { role: userData.role, uid: userData.uid });
+        
         // Validate user role - admin roles cannot login here
         if (userData.role && ['administrator', 'admin_desa', 'kepala_desa'].includes(userData.role)) {
+          console.log('❌ Admin trying to login as masyarakat');
           setError('Akses ditolak. Admin harus login di halaman Admin.');
           
           // Clear the login data
           localStorage.removeItem('sigede_auth_user');
-          
+          clearTimeout(loginTimeout);
           setIsLoading(false);
           return;
         }
         
         // Masyarakat login successful, redirect to masyarakat home
-        console.log('✅ MASYARAKAT LOGIN: Masyarakat login successful, redirecting to masyarakat home');
-        router.push('/masyarakat/home');
+        console.log('✅ MASYARAKAT LOGIN: Masyarakat login successful, redirecting to home');
+        
+        // Force navigation with window.location for more reliable redirect
+        setTimeout(() => {
+          window.location.href = '/masyarakat/home';
+        }, 100);
+      } else {
+        clearTimeout(loginTimeout);
+        throw new Error('Session data not found after login');
       }
       
     } catch (error: any) {
       console.error('❌ MASYARAKAT LOGIN: Login failed:', error);
       setError(error.message || 'Login gagal. Periksa kembali ID dan password Anda.');
-    } finally {
       setIsLoading(false);
     }
   };

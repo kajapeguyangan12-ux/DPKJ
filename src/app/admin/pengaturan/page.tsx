@@ -48,16 +48,56 @@ export default function PengaturanPage() {
   const filePopup = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchPengaturan();
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.error('⏱️ Fetch timeout - forcing loading to false');
+        setLoading(false);
+        alert('Timeout loading data. Please refresh the page.');
+      }
+    }, 10000); // 10 second timeout
+
+    fetchPengaturan().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const fetchPengaturan = async () => {
+    const defaultPengaturan = {
+      judulSelamatDatang: "Ucapan Selamat Datang",
+      ucapanSelamatDatang: "",
+      fotoKepalaDesa: "",
+      namaKepalaDesa: "",
+      fotoSlideshow: [],
+      popupAktif: false,
+      popupTipe: "gambar" as const,
+      popupJudul: "",
+      popupIsi: "",
+      popupFoto: "",
+      popupYoutubeUrl: "",
+      popupYoutubeStartTime: 0,
+    };
+
     try {
+      console.log('📥 Fetching pengaturan...');
       setLoading(true);
+      
+      // Check if Firebase is properly initialized
+      if (!db) {
+        console.error('❌ Firebase DB not initialized');
+        throw new Error('Database connection not available');
+      }
+
       const docRef = doc(db, "pengaturan", "home");
+      console.log('📄 Getting document: pengaturan/home');
+      
       const docSnap = await getDoc(docRef);
+      console.log('📄 Document fetch completed, exists:', docSnap.exists());
       
       if (docSnap.exists()) {
+        console.log('✅ Pengaturan data found');
         const data = docSnap.data() as PengaturanHome;
         setPengaturan({
           judulSelamatDatang: data.judulSelamatDatang || "Ucapan Selamat Datang",
@@ -76,11 +116,31 @@ export default function PengaturanPage() {
         setPreviewKepalaDesa(data.fotoKepalaDesa || "");
         setPreviewPopup(data.popupFoto || "");
         setSlideshowPreviews(data.fotoSlideshow || []);
+      } else {
+        console.log('⚠️ No pengaturan data, using defaults');
+        setPengaturan(defaultPengaturan);
       }
-    } catch (error) {
-      console.error("Error fetching pengaturan:", error);
-      alert("Gagal memuat pengaturan");
+    } catch (error: any) {
+      console.error("❌ Error fetching pengaturan:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
+      // Use default values on error
+      setPengaturan(defaultPengaturan);
+      
+      // Show user-friendly error
+      const errorMessage = error.code === 'permission-denied' 
+        ? 'Anda tidak memiliki izin untuk mengakses data ini'
+        : error.code === 'unavailable'
+        ? 'Koneksi ke database gagal. Periksa koneksi internet Anda'
+        : `Error: ${error.message || 'Unknown error'}`;
+        
+      alert(`Gagal memuat pengaturan: ${errorMessage}\n\nMenggunakan nilai default.`);
     } finally {
+      console.log('✅ Fetch complete, setting loading to false');
       setLoading(false);
     }
   };

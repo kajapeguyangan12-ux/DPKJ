@@ -52,36 +52,54 @@ export default function AdminLogin() {
     try {
       console.log('🔐 ADMIN LOGIN: Attempting login with identifier:', identifier);
       
+      // Add timeout to prevent infinite loading
+      const loginTimeout = setTimeout(() => {
+        console.error('⏱️ Admin login timeout');
+        setIsSubmitting(false);
+        setError('Login timeout. Silakan coba lagi.');
+      }, 15000); // 15 second timeout
+      
       await login({
         userId: identifier,
         password: password
       });
+
+      clearTimeout(loginTimeout);
 
       // Check if user is admin after successful login
       const storedUser = localStorage.getItem('sigede_auth_user');
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         
+        console.log('👤 Admin user data loaded:', { role: userData.role, uid: userData.uid });
+        
         // Validate user role - only admin roles can login here
         if (!userData.role || !['administrator', 'admin_desa', 'kepala_desa'].includes(userData.role)) {
+          console.log('❌ Non-admin trying to login as admin');
           setError('Akses ditolak. Halaman ini hanya untuk Admin. Silakan login di halaman Masyarakat.');
           
           // Clear the login data
           localStorage.removeItem('sigede_auth_user');
-          
+          clearTimeout(loginTimeout);
           setIsSubmitting(false);
           return;
         }
         
         // Admin login successful, redirect to admin home
-        console.log('✅ ADMIN LOGIN: Admin login successful, redirecting to admin home');
-        router.push('/admin/home');
+        console.log('✅ ADMIN LOGIN: Admin login successful, redirecting to home');
+        
+        // Force navigation with window.location for more reliable redirect
+        setTimeout(() => {
+          window.location.href = '/admin/home';
+        }, 100);
+      } else {
+        clearTimeout(loginTimeout);
+        throw new Error('Session data not found after login');
       }
       
     } catch (error: any) {
       console.error('❌ ADMIN LOGIN: Login failed:', error);
       setError(error.message || 'Login gagal. Periksa kembali ID dan password Anda.');
-    } finally {
       setIsSubmitting(false);
     }
   };
