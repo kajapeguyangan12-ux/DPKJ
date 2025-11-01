@@ -10,7 +10,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { UserRole } from './rolePermissions';
+import { UserRole } from '../app/masyarakat/lib/useCurrentUser';
 
 export interface User {
   id: string;

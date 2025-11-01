@@ -2,17 +2,28 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from '../../../contexts/AuthContext';
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from '../../components/BottomNavigation';
 const SiGedeLogo = "/logo/LOGO_DPKJ.png";
 
 export default function ProfilMasyarakatPage() {
+  const { logout } = useAuth();
+  
   // Mock data; replace with real user data later
   const user = {
     nama: "Nama Lengkap",
     nik: "NIK",
     desa: "Dauh Puri Kaja",
     role: "Role",
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout('masyarakat');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -73,11 +84,7 @@ export default function ProfilMasyarakatPage() {
           {/* Logout Section */}
           <div className="mt-8 px-4 sm:px-6 w-full flex justify-center">
             <button
-              onClick={() => {
-                // Clear any authentication data if needed
-                // For now, just redirect to login page
-                window.location.href = '/masyarakat/login';
-              }}
+              onClick={handleLogout}
               className="rounded-full border border-red-300 bg-red-50 px-6 sm:px-8 py-2.5 sm:py-3 text-center text-xs sm:text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100 hover:border-red-400 transition-colors active:scale-95"
             >
               Logout Akun

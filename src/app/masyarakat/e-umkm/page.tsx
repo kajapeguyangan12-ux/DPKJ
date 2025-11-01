@@ -3,70 +3,85 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import BottomNavigation from '../../components/BottomNavigation';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface Product {
-  id: number;
-  name: string;
-  price: string;
-  store: string;
-  rating: number;
-  description: string;
-  image: string;
+  id: string;
+  namaUsaha: string;
+  namaPemilik: string;
+  kategori: string;
+  deskripsi: string;
+  alamat: string;
+  noTelepon: string;
+  email?: string;
+  jamOperasional?: string;
+  hargaRataRata?: string;
+  fotoUsaha?: string[];
+  status: 'aktif' | 'tidak_aktif' | 'pending';
+  rating?: number;
+  jumlahProduk?: number;
 }
 
-const products: Product[] = [
-  {
-    id: 1,
-    name: 'Nasi Gudeg Jogja',
-    price: 'Rp 15.000',
-    store: 'Warung Mbak Sri',
-    rating: 4.5,
-    description: 'Nasi gudeg tradisional dengan bumbu rahasia turun temurun, lengkap dengan sambal krecek dan ayam.',
-    image: 'https://via.placeholder.com/150x150?text=Foto+Produk',
-  },
-  {
-    id: 2,
-    name: 'Es Teh Manis',
-    price: 'Rp 5.000',
-    store: 'Kedai Pak Budi',
-    rating: 4.2,
-    description: 'Es teh manis segar dengan gula aren asli, cocok untuk menghilangkan dahaga.',
-    image: 'https://via.placeholder.com/150x150?text=Foto+Produk',
-  },
-  {
-    id: 3,
-    name: 'Bakso Malang',
-    price: 'Rp 12.000',
-    store: 'Bakso Mas Gendon',
-    rating: 4.7,
-    description: 'Bakso daging sapi pilihan dengan kuah kaldu yang gurih dan mie kuning.',
-    image: 'https://via.placeholder.com/150x150?text=Foto+Produk',
-  },
-  {
-    id: 4,
-    name: 'Juice Jeruk',
-    price: 'Rp 8.000',
-    store: 'Fruit Corner',
-    rating: 4.3,
-    description: 'Juice jeruk segar tanpa gula tambahan, kaya vitamin C.',
-    image: 'https://via.placeholder.com/150x150?text=Foto+Produk',
-  },
-];
+interface Product {
+  id: string;
+  namaUsaha: string;
+  namaPemilik: string;
+  kategori: string;
+  deskripsi: string;
+  alamat: string;
+  noTelepon: string;
+  email?: string;
+  jamOperasional?: string;
+  hargaRataRata?: string;
+  fotoUsaha?: string[];
+  status: 'aktif' | 'tidak_aktif' | 'pending';
+  rating?: number;
+  jumlahProduk?: number;
+}
 
-const categories = ['all', 'makanan', 'minuman'];
+const categories = ['Semua', 'Makanan & Minuman', 'Fashion & Pakaian', 'Kerajinan Tangan', 'Jasa', 'Pertanian', 'Teknologi', 'Kesehatan & Kecantikan', 'Lainnya'];
 
 export default function EUMKMPage() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [savedProducts, setSavedProducts] = useState<number[]>([]);
+  const [savedProducts, setSavedProducts] = useState<string[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchProducts();
     const saved = localStorage.getItem('savedProducts');
     if (saved) {
       setSavedProducts(JSON.parse(saved).map((p: any) => p.id));
     }
   }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const q = query(
+        collection(db, 'e-umkm'),
+        where('status', '==', 'aktif')
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedProducts: Product[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        fetchedProducts.push({
+          id: doc.id,
+          ...doc.data()
+        } as Product);
+      });
+      
+      setProducts(fetchedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSaveProduct = (product: Product) => {
     let updatedSaved;
@@ -88,9 +103,10 @@ export default function EUMKMPage() {
   };
 
   const filteredProducts = products.filter((product) => {
-    const matchesCategory = selectedCategory === 'all' || product.name.toLowerCase().includes(selectedCategory);
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.store.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'Semua' || product.kategori === selectedCategory;
+    const matchesSearch = product.namaUsaha.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          product.namaPemilik.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          product.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -113,7 +129,7 @@ export default function EUMKMPage() {
               <div className="relative flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-white">Menu</h2>
-                  <p className="text-red-100 text-sm mt-1">E-UMKM Peguyangan</p>
+                  <p className="text-red-100 text-sm mt-1">E-UMKM Dauh Puri Kaja</p>
                 </div>
                 <button 
                   onClick={() => setIsMenuOpen(false)} 
@@ -254,12 +270,12 @@ export default function EUMKMPage() {
         {/* Categories */}
         <section className="mb-6">
           <div className="rounded-3xl bg-white/90 p-4 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
-            <div className="flex space-x-2 justify-center">
+            <div className="flex space-x-2 overflow-x-auto pb-2">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-colors ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                     selectedCategory === category
                       ? 'bg-red-100 text-red-600 border border-red-200'
                       : 'bg-gray-200 text-gray-600'
@@ -275,40 +291,78 @@ export default function EUMKMPage() {
         {/* Products Grid */}
         <section className="mb-6">
           <div className="rounded-3xl bg-white/90 p-6 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
-            <div className="grid grid-cols-2 gap-4">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl shadow-lg p-4 ring-1 ring-red-100 relative">
-                  <button
-                    onClick={() => toggleSaveProduct(product)}
-                    className={`absolute top-2 right-2 p-1 rounded-full ${
-                      savedProducts.includes(product.id)
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill={savedProducts.includes(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                  </button>
-                  <div className="w-full h-32 bg-gradient-to-br from-red-100 to-red-200 rounded-xl mb-3 flex items-center justify-center shadow-inner">
-                    <span className="text-red-600 text-sm font-medium">Foto Produk</span>
-                  </div>
-                  <h3 className="font-semibold text-gray-800 mb-1">{product.name}</h3>
-                  <p className="text-red-600 font-bold mb-1">{product.price}</p>
-                  <p className="text-gray-500 text-sm mb-1">{product.store}</p>
-                  <div className="flex items-center">
-                    <span className="text-yellow-400 text-sm">★</span>
-                    <span className="text-gray-600 text-sm ml-1">Rating</span>
-                  </div>
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-red-600"></div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-4">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
                 </div>
-              ))}
-            </div>
+                <h3 className="text-lg font-bold text-gray-700 mb-2">Tidak Ada UMKM</h3>
+                <p className="text-gray-500 text-sm">Belum ada UMKM yang terdaftar</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {filteredProducts.map((product) => (
+                  <div key={product.id} className="bg-white rounded-2xl shadow-lg p-4 ring-1 ring-red-100 relative">
+                    <button
+                      onClick={() => toggleSaveProduct(product)}
+                      className={`absolute top-2 right-2 p-1 rounded-full ${
+                        savedProducts.includes(product.id)
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill={savedProducts.includes(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
+                    
+                    {/* Image */}
+                    <div className="w-full h-32 bg-gradient-to-br from-red-100 to-red-200 rounded-xl mb-3 flex items-center justify-center shadow-inner overflow-hidden">
+                      {product.fotoUsaha && product.fotoUsaha[0] ? (
+                        <img 
+                          src={product.fotoUsaha[0]} 
+                          alt={product.namaUsaha}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-red-600 text-sm font-medium">Foto Produk</span>
+                      )}
+                    </div>
+                    
+                    <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">{product.namaUsaha}</h3>
+                    <p className="text-red-600 font-bold mb-1">{product.hargaRataRata || 'Hubungi penjual'}</p>
+                    <p className="text-gray-500 text-sm mb-1 line-clamp-1">{product.namaPemilik}</p>
+                    <div className="flex items-center">
+                      <span className="text-yellow-400 text-sm">★</span>
+                      <span className="text-gray-600 text-sm ml-1">{product.rating?.toFixed(1) || '0.0'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
+
+      {/* Floating Action Button - Buat Toko */}
+      <Link href="/masyarakat/e-umkm/create">
+        <button className="fixed right-6 bottom-24 z-50 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 active:scale-95 group">
+          <svg className="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span className="font-bold">Buat Toko</span>
+        </button>
+      </Link>
 
       {/* Navigation Bar */}
       <BottomNavigation />
     </main>
   );
 }
+

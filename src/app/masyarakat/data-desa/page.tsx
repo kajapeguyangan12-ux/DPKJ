@@ -1,39 +1,97 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import HeaderCard from "../../components/HeaderCard";
 import BottomNavigation from "../../components/BottomNavigation";
+import { getDataDesa, DataDesaItem } from "../../../lib/dataDesaService";
 
-interface DataItem {
+interface StatistikData {
   id: string;
   nama: string;
   value: string;
+  icon: string;
+  color: string;
 }
 
-const dataDesa: DataItem[] = [
-  { id: "1", nama: "Nama Desa", value: "Dauh Puri Kaja" },
-  { id: "2", nama: "Jenis Kelamin", value: "Perempuan" },
-  { id: "3", nama: "Pekerjaan", value: "PNS" },
-  { id: "4", nama: "Suku Bangsa", value: "Bali" },
-  { id: "5", nama: "Pendidikan", value: "S1" },
-];
-
-const kategoriList = [
-  "Agama",
-  "Jenis Kelamin",
-  "Pekerjaan",
-  "Suku Bangsa",
-  "Pendidikan",
-];
-
 export default function DataDesaPage() {
-  const [selectedCategory, setSelectedCategory] = useState<"desa" | "kategori">("desa");
-  const [selectedKategori, setSelectedKategori] = useState<string>("");
-  const [showKategoriDropdown, setShowKategoriDropdown] = useState(false);
+  const [dataWarga, setDataWarga] = useState<DataDesaItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredData = dataDesa.filter(item =>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getDataDesa();
+        setDataWarga(data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Calculate statistics
+  const totalPenduduk = dataWarga.length;
+  const totalLakiLaki = dataWarga.filter(item => item.jenisKelamin === 'Laki-laki').length;
+  const totalPerempuan = dataWarga.filter(item => item.jenisKelamin === 'Perempuan').length;
+  const totalKepalaKeluarga = dataWarga.filter(item => item.shdk === 'Kepala Keluarga').length;
+  
+  // Group data by No KK for total KK count
+  const groupedByKK = dataWarga.reduce((groups, warga) => {
+    const noKK = warga.noKK || 'Tanpa KK';
+    if (!groups[noKK]) {
+      groups[noKK] = [];
+    }
+    groups[noKK].push(warga);
+    return groups;
+  }, {} as Record<string, DataDesaItem[]>);
+  
+  const totalKK = Object.keys(groupedByKK).filter(kk => kk !== 'Tanpa KK').length;
+
+  // Create statistics data for display
+  const statistikData: StatistikData[] = [
+    {
+      id: "1",
+      nama: "Total Penduduk",
+      value: totalPenduduk.toLocaleString(),
+      icon: "👥",
+      color: "from-blue-500 to-blue-600"
+    },
+    {
+      id: "2",
+      nama: "Laki-laki",
+      value: totalLakiLaki.toLocaleString(),
+      icon: "👨",
+      color: "from-green-500 to-green-600"
+    },
+    {
+      id: "3",
+      nama: "Perempuan",
+      value: totalPerempuan.toLocaleString(),
+      icon: "👩",
+      color: "from-pink-500 to-pink-600"
+    },
+    {
+      id: "4",
+      nama: "Kepala Keluarga",
+      value: totalKepalaKeluarga.toLocaleString(),
+      icon: "🏠",
+      color: "from-purple-500 to-purple-600"
+    },
+    {
+      id: "5",
+      nama: "Total KK",
+      value: totalKK.toLocaleString(),
+      icon: "📋",
+      color: "from-orange-500 to-orange-600"
+    },
+  ];
+
+  const filteredData = statistikData.filter(item =>
     item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.value.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -49,76 +107,12 @@ export default function DataDesaPage() {
           showBackButton={true}
         />
 
-        {/* Filter Section */}
+        {/* Search Section */}
         <section className="mb-6 rounded-3xl bg-white/80 backdrop-blur-md p-4 shadow-lg ring-1 ring-gray-100">
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <button
-              onClick={() => {
-                setSelectedCategory("desa");
-                setShowKategoriDropdown(false);
-              }}
-              className={`py-2.5 px-4 rounded-full font-semibold text-sm transition-all duration-300 ${
-                selectedCategory === "desa"
-                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Pilih Desa
-            </button>
-            
-            {/* Kategori Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowKategoriDropdown(!showKategoriDropdown)}
-                className={`w-full py-2.5 px-4 rounded-full font-semibold text-sm transition-all duration-300 flex items-center justify-between ${
-                  selectedCategory === "kategori"
-                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <span>Pilih Kategori</span>
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-300 ${showKategoriDropdown ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </button>
-              
-              {/* Dropdown Menu */}
-              {showKategoriDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl ring-1 ring-gray-100 z-50 overflow-hidden">
-                  <div className="max-h-60 overflow-y-auto">
-                    {kategoriList.map((kategori, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setSelectedKategori(kategori);
-                          setSelectedCategory("kategori");
-                          setShowKategoriDropdown(false);
-                        }}
-                        className={`w-full px-4 py-3 text-left font-medium text-sm transition-all hover:bg-red-50 ${
-                          selectedKategori === kategori
-                            ? "bg-red-100 text-red-700"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {kategori}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Search Input */}
           <div className="relative">
             <input
               type="text"
-              placeholder="Cari data..."
+              placeholder="Cari statistik..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 pl-10 rounded-full border border-gray-300 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200 transition-all bg-white"
@@ -129,48 +123,65 @@ export default function DataDesaPage() {
           </div>
         </section>
 
-        {/* Data Summary Card */}
-        <section className="mb-6 rounded-3xl bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-6 text-white shadow-xl ring-1 ring-red-200">
-          <div className="space-y-2">
-            <p className="text-sm font-medium opacity-90">Total Data</p>
-            <p className="text-4xl font-bold">{filteredData.length}</p>
-            <p className="text-sm opacity-75">Data tersedia</p>
-          </div>
-        </section>
-
-        {/* Data List */}
-        <section className="space-y-3">
-          {filteredData.length > 0 ? (
-            filteredData.map((item) => (
-              <div
-                key={item.id}
-                className="group rounded-2xl bg-white/80 backdrop-blur-sm p-4 shadow-md hover:shadow-xl ring-1 ring-gray-100 hover:ring-red-200 transition-all duration-300 hover:scale-102 hover:bg-white"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-red-600 mb-1">
-                      {item.nama}
-                    </p>
-                    <p className="text-sm font-medium text-gray-800">
-                      {item.value}
-                    </p>
-                  </div>
-                  <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-md ring-1 ring-gray-100 text-center">
-              <div className="text-4xl mb-3">🔍</div>
-              <p className="text-gray-600 font-medium">Tidak ada data yang cocok</p>
-              <p className="text-xs text-gray-500 mt-1">Coba ubah pencarian Anda</p>
+        {/* Loading State */}
+        {loading ? (
+          <section className="mb-6 rounded-3xl bg-white/80 backdrop-blur-md p-8 shadow-lg ring-1 ring-gray-100">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+              <p className="text-gray-600 font-medium">Memuat data penduduk...</p>
             </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <>
+            {/* Data Summary Card */}
+            <section className="mb-6 rounded-3xl bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-6 text-white shadow-xl ring-1 ring-red-200">
+              <div className="space-y-2">
+                <p className="text-sm font-medium opacity-90">Total Kategori Statistik</p>
+                <p className="text-4xl font-bold">{filteredData.length}</p>
+                <p className="text-sm opacity-75">Dari {totalPenduduk} penduduk</p>
+              </div>
+            </section>
+
+            {/* Statistics Grid */}
+            <section className="space-y-3">
+              {filteredData.length > 0 ? (
+                filteredData.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`group rounded-2xl bg-gradient-to-r ${item.color} p-5 text-white shadow-lg hover:shadow-xl ring-1 ring-white/20 hover:ring-white/40 transition-all duration-300 hover:scale-102`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-2xl opacity-90">
+                          {item.icon}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium opacity-90 mb-1">
+                            {item.nama}
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {item.value}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 shadow-md ring-1 ring-gray-100 text-center">
+                  <div className="text-4xl mb-3">🔍</div>
+                  <p className="text-gray-600 font-medium">Tidak ada statistik yang cocok</p>
+                  <p className="text-xs text-gray-500 mt-1">Coba ubah pencarian Anda</p>
+                </div>
+              )}
+            </section>
+          </>
+        )}
 
         {/* Analysis Button */}
         <section className="mt-8">

@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function AdminHeaderCard({ title, children, className = '' }: { title: string; children?: React.ReactNode; className?: string }) {
   return (
@@ -55,8 +57,32 @@ export function AdminHeaderIcons() {
   );
 }
 
-export function AdminHeaderAccount({ username = "Admin", email = "admin@example.com", onLogout }: { username?: string; email?: string; onLogout?: () => void }) {
+export function AdminHeaderAccount({ onLogout }: { onLogout?: () => void }) {
   const [open, setOpen] = React.useState(false);
+  const router = useRouter();
+  const { user } = useAuth();
+  
+  // Get user data from auth context or fallback
+  const username = user?.displayName || user?.userName || "Admin";
+  const email = user?.email || "admin@example.com";
+  const role = user?.role || "administrator";
+  
+  // Get role display name
+  const getRoleDisplay = (role: string) => {
+    const roleMap: Record<string, string> = {
+      'administrator': 'Administrator',
+      'admin_desa': 'Admin Desa',
+      'kepala_desa': 'Kepala Desa',
+      'warga': 'Warga',
+    };
+    return roleMap[role] || role;
+  };
+
+  const handleDetailAkun = () => {
+    setOpen(false);
+    router.push('/admin/profil-admin');
+  };
+
   return (
     <div className="relative">
       <button
@@ -74,13 +100,17 @@ export function AdminHeaderAccount({ username = "Admin", email = "admin@example.
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
                 {username.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <div className="font-bold text-lg text-gray-800">{username}</div>
-                <div className="text-sm text-gray-500">{email}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-lg text-gray-800 truncate">{username}</div>
+                <div className="text-sm text-gray-500 truncate">{email}</div>
+                <div className="text-xs text-red-600 font-medium mt-1">{getRoleDisplay(role)}</div>
               </div>
             </div>
             <hr className="my-4 border-gray-200" />
-            <button className="flex items-center gap-3 text-gray-700 py-2 w-full text-left hover:bg-gray-50 rounded-lg px-3 transition-colors font-medium">
+            <button 
+              onClick={handleDetailAkun}
+              className="flex items-center gap-3 text-gray-700 py-2 w-full text-left hover:bg-gray-50 rounded-lg px-3 transition-colors font-medium"
+            >
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400"><circle cx="10" cy="8" r="3.2"/><path d="M3.5 18a6.5 6.5 0 0 1 13 0"/></svg>
               Detail Akun
             </button>

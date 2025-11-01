@@ -1,126 +1,88 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../../../../lib/firebase';
 import HeaderCard from "../../../../../components/HeaderCard";
 import BottomNavigation from '../../../../../components/BottomNavigation';
 
-type CultureDetailProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-type CultureDetail = {
+type BudayaDetail = {
   id: string;
-  title: string;
-  category: string;
-  address: string;
-  location: string;
-  description: string;
-  fullDescription: string;
-  image: string;
-  rating: number;
-  distance: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  schedule: string;
-  requirements: string[];
-  contact: string;
-  history: string;
+  judul: string;
+  kategori: string;
+  deskripsi: string;
+  sejarah?: string;
+  fotoUrl?: string;
+  galeri?: string[]; // Gallery images
+  createdAt?: any;
+  updatedAt?: any;
 };
 
-const cultureDetails: Record<string, CultureDetail> = {
-  "1": {
-    id: "1",
-    title: "Seni Tari Tradisional",
-    category: "Seni",
-    address: "Jl. Budaya No. 1, Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Pertunjukan tari tradisional Bali yang memukau",
-    fullDescription: "Seni tari tradisional Peguyangan merupakan warisan budaya yang telah diwariskan turun-temurun selama berabad-abad. Tarian ini menggabungkan gerakan yang anggun dengan musik tradisional Bali seperti gamelan. Para penari mengenakan kostum tradisional yang indah dan menggunakan properti seperti kipas dan selendang untuk memperkaya ekspresi tarian.",
-    image: "/api/placeholder/400/300",
-    rating: 4.9,
-    distance: "1.5 km",
-    coordinates: { lat: -8.6400, lng: 115.2067 },
-    schedule: "Setiap hari Sabtu, 19:00 - 21:00 WITA",
-    requirements: ["Pakaian sopan", "Tidak makan/minum di area pertunjukan", "Dilarang merekam tanpa izin"],
-    contact: "+62 811-2345-6789",
-    history: "Tarian ini pertama kali dipentaskan pada upacara adat tahun 1950 dan telah menjadi bagian penting dari identitas budaya desa Peguyangan."
-  },
-  "2": {
-    id: "2",
-    title: "Upacara Melasti",
-    category: "Upacara",
-    address: "Pantai Peguyangan, Desa Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Upacara pembersihan diri umat Hindu Bali",
-    fullDescription: "Upacara Melasti adalah ritual suci umat Hindu Bali untuk menyucikan diri dan alam semesta. Dilakukan di pantai dengan membawa pratima (simbol dewa) untuk dimandikan di laut. Upacara ini biasanya dilakukan menjelang hari raya besar seperti Nyepi atau Galungan. Prosesi diiringi dengan doa, mantra, dan persembahan yang sakral.",
-    image: "/api/placeholder/400/300",
-    rating: 4.8,
-    distance: "2.1 km",
-    coordinates: { lat: -8.6500, lng: 115.2167 },
-    schedule: "Setiap Purnama, 06:00 - 09:00 WITA",
-    requirements: ["Berpakaian adat Bali", "Berpartisipasi dalam doa", "Menjaga kekhidmatan"],
-    contact: "+62 812-3456-7890",
-    history: "Tradisi Melasti telah dilakukan sejak zaman kerajaan Bali kuno dan merupakan bagian dari filosofi Tri Hita Karana untuk menjaga harmoni antara manusia, alam, dan Tuhan."
-  },
-  "3": {
-    id: "3",
-    title: "Museum Sejarah Peguyangan",
-    category: "Sejarah",
-    address: "Jl. Sejarah No. 8, Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Koleksi artefak dan peninggalan sejarah desa",
-    fullDescription: "Museum Sejarah Peguyangan menyimpan berbagai artefak bersejarah yang menceritakan perjalanan panjang desa ini. Koleksi meliputi prasasti kuno, alat pertanian tradisional, pakaian adat, dan foto-foto bersejarah. Museum ini menjadi pusat pendidikan tentang sejarah dan perkembangan Desa Peguyangan dari masa ke masa.",
-    image: "/api/placeholder/400/300",
-    rating: 4.7,
-    distance: "900 m",
-    coordinates: { lat: -8.6600, lng: 115.2267 },
-    schedule: "Selasa - Minggu, 09:00 - 16:00 WITA",
-    requirements: ["Tidak makan/minum", "Tidak menyentuh artefak", "Mengikuti tur guide"],
-    contact: "+62 813-5678-9012",
-    history: "Museum didirikan tahun 1995 untuk melestarikan warisan budaya dan sejarah desa Peguyangan yang telah berusia lebih dari 500 tahun."
-  },
-  "4": {
-    id: "4",
-    title: "Workshop Kerajinan Bambu",
-    category: "Kerajinan",
-    address: "Jl. Kerajinan No. 15, Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Belajar membuat kerajinan tangan dari bambu",
-    fullDescription: "Workshop ini memberikan kesempatan untuk belajar membuat berbagai kerajinan tangan dari bambu, mulai dari anyaman sederhana hingga ukiran yang kompleks. Peserta akan didampingi oleh pengrajin lokal yang berpengalaman dan dapat membawa pulang hasil karya mereka sendiri. Workshop ini juga berfungsi sebagai upaya pelestarian kerajinan tradisional Bali.",
-    image: "/api/placeholder/400/300",
-    rating: 4.6,
-    distance: "1.3 km",
-    coordinates: { lat: -8.6700, lng: 115.2367 },
-    schedule: "Setiap hari, 10:00 - 15:00 WITA",
-    requirements: ["Registrasi terlebih dahulu", "Menggunakan alat pelindung", "Membayar biaya workshop"],
-    contact: "+62 814-6789-0123",
-    history: "Kerajinan bambu telah menjadi mata pencaharian masyarakat Peguyangan sejak abad ke-18 dan terus dilestarikan hingga saat ini."
-  }
-};
+export default function BudayaDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [budaya, setBudaya] = useState<BudayaDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"info" | "history" | "gallery">("info");
+  const [imageError, setImageError] = useState(false);
 
-export default function BudayaDetailPage({ params }: CultureDetailProps) {
-  const [activeTab, setActiveTab] = useState<"info" | "location" | "history">("info");
-  const resolvedParams = use(params);
-  const cultureDetail = cultureDetails[resolvedParams.id];
+  useEffect(() => {
+    const fetchBudayaDetail = async () => {
+      try {
+        if (!params.id) return;
+        
+        const docRef = doc(db, 'budaya', params.id as string);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          setBudaya({
+            id: docSnap.id,
+            ...docSnap.data()
+          } as BudayaDetail);
+        } else {
+          console.log('Budaya tidak ditemukan');
+        }
+      } catch (error) {
+        console.error('Error fetching budaya:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!cultureDetail) {
+    fetchBudayaDetail();
+  }, [params.id]);
+
+  if (loading) {
     return (
-      <main className="min-h-[100svh] bg-red-50 text-gray-900">
+      <main className="min-h-[100svh] bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
         <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
           <div className="text-center py-12">
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Memuat detail budaya...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!budaya) {
+    return (
+      <main className="min-h-[100svh] bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
+        <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
+          <div className="text-center py-12">
+            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-purple-200 backdrop-blur-sm">
               <div className="text-6xl mb-4">🔍</div>
               <div className="text-lg font-semibold text-gray-700 mb-2">Budaya tidak ditemukan</div>
               <div className="text-sm text-gray-600 mb-4">Data budaya yang Anda cari tidak tersedia</div>
               <Link
                 href="/masyarakat/wisata-budaya/budaya"
-                className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-600 transition"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl text-sm font-medium hover:shadow-lg transition-all"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
                 Kembali ke Budaya
               </Link>
             </div>
@@ -130,177 +92,225 @@ export default function BudayaDetailPage({ params }: CultureDetailProps) {
     );
   }
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: budaya.judul,
+        text: budaya.deskripsi,
+        url: window.location.href,
+      });
+    }
+  };
+
   return (
-    <main className="min-h-[100svh] bg-red-50 text-gray-900">
+    <main className="min-h-[100svh] bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
         {/* Header Card */}
         <HeaderCard 
           title="Detail Budaya"
-          subtitle={cultureDetail.title}
+          subtitle={budaya.judul}
           backUrl="/masyarakat/wisata-budaya/budaya"
           showBackButton={true}
         />
 
-        {/* Main Image Section */}
-        <div className="mb-6 rounded-3xl bg-white/95 shadow-lg ring-1 ring-red-100 overflow-hidden">
-          <div className="relative h-64 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-            <div className="text-center text-red-600">
-              <CultureIcon className="mx-auto h-20 w-20 mb-3 opacity-50" />
-              <div className="text-lg font-medium">Foto</div>
-              <div className="text-sm text-red-500 mt-1">{cultureDetail.title}</div>
-            </div>
-            <div className="absolute top-4 right-4">
-              <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700 shadow-sm">
-                ⭐ {cultureDetail.rating}
+        {/* Hero Image Section */}
+        <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-purple-200">
+          <div className="relative h-80">
+            {budaya.fotoUrl && !imageError ? (
+              <img 
+                src={budaya.fotoUrl} 
+                alt={budaya.judul}
+                onError={() => setImageError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <svg className="mx-auto h-20 w-20 mb-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <div className="text-lg font-medium">Foto Budaya</div>
+                </div>
               </div>
-            </div>
+            )}
+            
+            {/* Gradient Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent"></div>
+            
+            {/* Category Badge */}
             <div className="absolute top-4 left-4">
-              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                {cultureDetail.distance}
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl backdrop-blur-sm ring-2 ring-white/30">
+                {budaya.kategori}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Culture Name Section */}
-        <div className="mb-4">
-          <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-            <div className="text-center">
-              <div className="text-xl font-bold text-gray-900 mb-2">Nama Kegiatan Budaya</div>
-              <div className="text-lg font-semibold text-red-600">{cultureDetail.title}</div>
-              <div className="inline-block bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium mt-2">
-                {cultureDetail.category}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Description Section */}
-        <div className="mb-6">
-          <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900 mb-3">Deskripsi Kegiatan</div>
-              <div className="text-sm text-gray-700 leading-relaxed text-left">
-                {cultureDetail.fullDescription}
-              </div>
+            
+            {/* Title Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-2xl">{budaya.judul}</h1>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-4 flex rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-1">
+        <div className="mb-6 flex gap-2 p-1.5 rounded-2xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-purple-200">
           {[
-            { id: "info", label: "Informasi", icon: <InfoIcon className="h-4 w-4" /> },
-            { id: "location", label: "Lokasi", icon: <LocationIcon className="h-4 w-4" /> },
-            { id: "history", label: "Sejarah", icon: <HistoryIcon className="h-4 w-4" /> }
+            { id: "info", label: "Info", icon: "ℹ️" },
+            { id: "history", label: "Sejarah", icon: "📜" },
+            { id: "gallery", label: "Galeri", icon: "🖼️" }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 ${
                 activeTab === tab.id
-                  ? "bg-red-500 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-red-50"
+                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-105"
+                  : "text-gray-600 hover:bg-purple-50"
               }`}
             >
-              {tab.icon}
+              <span className="text-lg">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
 
         {/* Tab Content */}
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
           {activeTab === "info" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Alamat Lengkap</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <LocationIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {cultureDetail.address}
+            <div className="space-y-4">
+              {/* Deskripsi */}
+              <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-purple-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
+                  <h3 className="text-lg font-bold text-gray-800">Deskripsi</h3>
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Jadwal Kegiatan</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <ClockIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {cultureDetail.schedule}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-2">Persyaratan</div>
-                  <div className="space-y-2">
-                    {cultureDetail.requirements.map((requirement, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-gray-600">{requirement}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Kontak</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <PhoneIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {cultureDetail.contact}
-                  </div>
-                </div>
+                <p className="text-gray-700 leading-relaxed">{budaya.deskripsi}</p>
               </div>
-            </div>
-          )}
 
-          {activeTab === "location" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Koordinat GPS</div>
-                  <div className="text-sm text-gray-600">
-                    Lat: {cultureDetail.coordinates.lat}, Lng: {cultureDetail.coordinates.lng}
-                  </div>
-                </div>
-                <div className="rounded-xl bg-gradient-to-br from-red-100 to-red-200 p-8 text-center">
-                  <MapIcon className="mx-auto h-16 w-16 text-red-600 mb-2" />
-                  <div className="text-sm font-medium text-gray-700">Peta Lokasi</div>
+              {/* Kategori */}
+              <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-purple-200 p-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-600">Kategori</span>
+                  <span className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                    {budaya.kategori}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === "history" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900 mb-3">Sejarah & Asal-usul</div>
-                <div className="text-sm text-gray-700 leading-relaxed text-left">
-                  {cultureDetail.history}
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-purple-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
                 </div>
+                <h3 className="text-lg font-bold text-gray-800">Sejarah & Asal Usul</h3>
               </div>
+              {budaya.sejarah ? (
+                <p className="text-gray-700 leading-relaxed">{budaya.sejarah}</p>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">📜</div>
+                  <p className="text-gray-500 text-sm">Informasi sejarah belum tersedia</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "gallery" && (
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-purple-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">Foto Budaya</h3>
+              </div>
+              
+              {/* Check if there are any images */}
+              {((budaya.galeri && budaya.galeri.length > 0) || budaya.fotoUrl) ? (
+                <div className="space-y-4">
+                  {/* Main Photo */}
+                  {budaya.fotoUrl && !imageError && (
+                    <div className="rounded-2xl overflow-hidden shadow-lg ring-2 ring-purple-200">
+                      <img 
+                        src={budaya.fotoUrl} 
+                        alt={budaya.judul}
+                        onError={() => setImageError(true)}
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 text-xs font-semibold text-center">
+                        Foto Utama
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gallery Images */}
+                  {budaya.galeri && budaya.galeri.length > 0 && (
+                    <>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">
+                        Foto Lainnya ({budaya.galeri.length})
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {budaya.galeri.map((imageUrl, index) => (
+                          <div key={index} className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                            <img 
+                              src={imageUrl} 
+                              alt={`${budaya.judul} - Foto ${index + 1}`}
+                              className="w-full h-40 object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl">
+                  <div className="text-5xl mb-3">🖼️</div>
+                  <p className="text-gray-600 text-sm font-medium">Foto belum tersedia</p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <button className="w-full bg-red-500 text-white py-4 px-6 rounded-2xl text-lg font-semibold shadow-lg hover:bg-red-600 transition">
-            Ikuti Kegiatan
+          <button className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white py-4 px-6 rounded-2xl text-lg font-bold shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+              Pelajari Lebih Lanjut
+            </span>
           </button>
 
           <div className="grid grid-cols-2 gap-3">
-            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-medium shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl transition flex items-center justify-center gap-2">
-              <ShareIcon className="h-4 w-4" />
+            <button 
+              onClick={handleShare}
+              className="bg-white/90 text-purple-600 py-3 px-4 rounded-xl text-sm font-bold shadow-lg ring-1 ring-purple-200 hover:bg-white hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
               Bagikan
             </button>
-            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-medium shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl transition flex items-center justify-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              Jadwalkan
+            <button className="bg-white/90 text-purple-600 py-3 px-4 rounded-xl text-sm font-bold shadow-lg ring-1 ring-purple-200 hover:bg-white hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              Favorit
             </button>
           </div>
-
-          {/* Google Maps Button */}
-          <button className="w-full bg-green-500 text-white py-3 px-4 rounded-xl text-sm font-medium shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2">
-            <MapPinIcon className="h-4 w-4" />
-            Buka di Google Maps
-          </button>
         </div>
       </div>
 

@@ -1,111 +1,78 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../../../../lib/firebase';
 import HeaderCard from "../../../../../components/HeaderCard";
 import BottomNavigation from '../../../../../components/BottomNavigation';
 
-type TourismDetailProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-type TourismDetail = {
+type WisataDetail = {
   id: string;
-  title: string;
-  category: string;
-  address: string;
-  location: string;
-  description: string;
-  fullDescription: string;
-  image: string;
-  rating: number;
-  distance: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  facilities: string[];
-  openHours: string;
-  contact: string;
+  judul: string;
+  kategori: string;
+  alamat: string;
+  lokasi: string;
+  deskripsi: string;
+  fotoUrl?: string;
+  galeri?: string[]; // Gallery images
+  rating?: number;
+  jarak?: string;
+  createdAt?: any;
+  updatedAt?: any;
 };
 
-const tourismDetails: Record<string, TourismDetail> = {
-  "1": {
-    id: "1",
-    title: "Air Terjun Peguyangan",
-    category: "Alam",
-    address: "Jl. Air Terjun No. 1, Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Air terjun alami dengan pemandangan yang menakjubkan",
-    fullDescription: "Air Terjun Peguyangan adalah salah satu destinasi wisata alam terbaik di Bali. Dengan ketinggian sekitar 25 meter, air terjun ini menawarkan pemandangan yang sangat indah dan udara yang segar. Pengunjung dapat berenang di kolam alami yang jernih dan melakukan aktivitas outdoor seperti hiking dan photography.",
-    image: "/api/placeholder/400/300",
-    rating: 4.8,
-    distance: "2.5 km",
-    coordinates: { lat: -8.6500, lng: 115.2167 },
-    facilities: ["Area Parkir", "Gazebo", "Toilet", "Warung Makan"],
-    openHours: "06:00 - 18:00 WITA",
-    contact: "+62 812-3456-7890"
-  },
-  "2": {
-    id: "2",
-    title: "Pura Peguyangan",
-    category: "Religi",
-    address: "Jl. Pura Peguyangan, Desa Peguyangan, Kecamatan Denpasar",
-    location: "Lokasi Sesuai GPS",
-    description: "Pura bersejarah dengan arsitektur tradisional Bali",
-    fullDescription: "Pura Peguyangan merupakan pura bersejarah yang dibangun pada abad ke-15. Dengan arsitektur tradisional Bali yang khas, pura ini menjadi tempat ibadah umat Hindu sekaligus destinasi wisata budaya. Pengunjung dapat melihat langsung upacara keagamaan dan mempelajari filosofi Tri Hita Karana.",
-    image: "/api/placeholder/400/300",
-    rating: 4.9,
-    distance: "1.2 km",
-    coordinates: { lat: -8.6600, lng: 115.2267 },
-    facilities: ["Area Parkir", "Pura", "Toilet", "Tempat Istirahat"],
-    openHours: "07:00 - 17:00 WITA",
-    contact: "+62 811-2345-6789"
-  },
-  "3": {
-    id: "3",
-    title: "Warung Makan Lokal",
-    category: "Kuliner",
-    address: "Jl. Raya Peguyangan No. 45",
-    location: "Lokasi Sesuai GPS",
-    description: "Kuliner khas Bali dengan cita rasa autentik",
-    fullDescription: "Warung makan ini menyajikan berbagai hidangan tradisional Bali dengan cita rasa autentik yang telah diwariskan turun-temurun. Menu andalan seperti babi guling, ayam betutu, dan lawar menjadi favorit para pengunjung. Dengan harga terjangkau dan pelayanan yang ramah, warung ini menjadi destinasi kuliner wajib dikunjungi.",
-    image: "/api/placeholder/400/300",
-    rating: 4.6,
-    distance: "800 m",
-    coordinates: { lat: -8.6700, lng: 115.2367 },
-    facilities: ["Area Parkir", "Tempat Duduk", "Toilet", "WiFi"],
-    openHours: "08:00 - 22:00 WITA",
-    contact: "+62 813-5678-9012"
-  },
-  "4": {
-    id: "4",
-    title: "Galeri Seni Peguyangan",
-    category: "Budaya",
-    address: "Jl. Seni Budaya No. 12",
-    location: "Lokasi Sesuai GPS",
-    description: "Koleksi seni dan kerajinan tangan lokal",
-    fullDescription: "Galeri seni ini memamerkan berbagai karya seni dan kerajinan tangan hasil karya seniman lokal Peguyangan. Pengunjung dapat melihat proses pembuatan kerajinan tradisional Bali seperti ukiran kayu, anyaman bambu, dan lukisan tradisional. Galeri ini juga menyediakan workshop untuk belajar membuat kerajinan tangan.",
-    image: "/api/placeholder/400/300",
-    rating: 4.7,
-    distance: "1.8 km",
-    coordinates: { lat: -8.6800, lng: 115.2467 },
-    facilities: ["Area Parkir", "Galeri", "Workshop", "Toko Souvenir"],
-    openHours: "09:00 - 16:00 WITA",
-    contact: "+62 814-6789-0123"
-  }
-};
+export default function WisataDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [wisata, setWisata] = useState<WisataDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"info" | "location" | "gallery">("info");
+  const [imageError, setImageError] = useState(false);
 
-export default function WisataDetailPage({ params }: TourismDetailProps) {
-  const [activeTab, setActiveTab] = useState<"info" | "location" | "review">("info");
-  const resolvedParams = use(params);
-  const tourismDetail = tourismDetails[resolvedParams.id];
+  useEffect(() => {
+    const fetchWisataDetail = async () => {
+      try {
+        if (!params.id) return;
+        
+        const docRef = doc(db, 'wisata', params.id as string);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          setWisata({
+            id: docSnap.id,
+            ...docSnap.data()
+          } as WisataDetail);
+        } else {
+          console.log('Wisata tidak ditemukan');
+        }
+      } catch (error) {
+        console.error('Error fetching wisata:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!tourismDetail) {
+    fetchWisataDetail();
+  }, [params.id]);
+
+  if (loading) {
     return (
-      <main className="min-h-[100svh] bg-red-50 text-gray-900">
+      <main className="min-h-[100svh] bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+        <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-200 border-t-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Memuat detail wisata...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!wisata) {
+    return (
+      <main className="min-h-[100svh] bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
         <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
           <div className="text-center py-12">
             <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
@@ -114,8 +81,11 @@ export default function WisataDetailPage({ params }: TourismDetailProps) {
               <div className="text-sm text-gray-600 mb-4">Data wisata yang Anda cari tidak tersedia</div>
               <Link
                 href="/masyarakat/wisata-budaya/wisata"
-                className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-600 transition"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-xl text-sm font-medium hover:shadow-lg transition-all"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
                 Kembali ke Wisata
               </Link>
             </div>
@@ -126,76 +96,106 @@ export default function WisataDetailPage({ params }: TourismDetailProps) {
   }
 
   return (
-    <main className="min-h-[100svh] bg-red-50 text-gray-900">
+    <main className="min-h-[100svh] bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
       <div className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
         {/* Header Card */}
         <HeaderCard 
-          title="Detail Wisata"
-          subtitle={tourismDetail.title}
+          title="Wisata"
+          subtitle="Destinasi Menarik"
           backUrl="/masyarakat/wisata-budaya/wisata"
           showBackButton={true}
         />
 
-        {/* Main Image Section */}
-        <div className="mb-6 rounded-3xl bg-white/95 shadow-lg ring-1 ring-red-100 overflow-hidden">
-          <div className="relative h-64 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-            <div className="text-center text-red-600">
-              <ImageIcon className="mx-auto h-20 w-20 mb-3 opacity-50" />
-              <div className="text-lg font-medium">Foto</div>
-              <div className="text-sm text-red-500 mt-1">{tourismDetail.title}</div>
-            </div>
-            <div className="absolute top-4 right-4">
-              <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700 shadow-sm">
-                ⭐ {tourismDetail.rating}
+        {/* Hero Image Section - Modern Design */}
+        <div className="mb-6 rounded-3xl bg-white shadow-xl ring-1 ring-gray-200 overflow-hidden">
+          <div className="relative h-80 bg-gradient-to-br from-gray-100 to-gray-200">
+            {wisata.fotoUrl && !imageError ? (
+              <>
+                <img 
+                  src={wisata.fotoUrl} 
+                  alt={wisata.judul}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-gray-400">
+                  <svg className="mx-auto h-24 w-24 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <div className="text-lg font-medium">Foto</div>
+                </div>
               </div>
+            )}
+            
+            {/* Badges Overlay */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg backdrop-blur-sm">
+                {wisata.kategori}
+              </div>
+              {wisata.jarak && (
+                <div className="bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  </svg>
+                  {wisata.jarak}
+                </div>
+              )}
             </div>
-            <div className="absolute top-4 left-4">
-              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                {tourismDetail.distance}
+            
+            {wisata.rating && (
+              <div className="absolute top-4 right-4">
+                <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                  <svg className="w-5 h-5 text-yellow-500 fill-yellow-500" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span className="font-bold text-gray-800">{wisata.rating}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Title Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+              <h1 className="text-2xl font-bold text-white mb-1">{wisata.judul}</h1>
+              <div className="flex items-center gap-2 text-white/90 text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="line-clamp-1">{wisata.alamat || wisata.lokasi}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tourism Name Section */}
-        <div className="mb-4">
-          <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-            <div className="text-center">
-              <div className="text-xl font-bold text-gray-900 mb-2">Nama Wisata</div>
-              <div className="text-lg font-semibold text-red-600">{tourismDetail.title}</div>
-              <div className="inline-block bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium mt-2">
-                {tourismDetail.category}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Description Section */}
-        <div className="mb-6">
-          <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900 mb-3">Deskripsi Wisata</div>
-              <div className="text-sm text-gray-700 leading-relaxed text-left">
-                {tourismDetail.fullDescription}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="mb-4 flex rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-1">
+        {/* Tab Navigation - Modern Pills */}
+        <div className="mb-6 flex gap-2 p-1.5 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg ring-1 ring-gray-200">
           {[
-            { id: "info", label: "Informasi", icon: <InfoIcon className="h-4 w-4" /> },
-            { id: "location", label: "Lokasi", icon: <LocationIcon className="h-4 w-4" /> },
-            { id: "review", label: "Ulasan", icon: <StarIcon className="h-4 w-4" /> }
+            { id: "info", label: "Info", icon: (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )},
+            { id: "location", label: "Lokasi", icon: (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              </svg>
+            )},
+            { id: "gallery", label: "Galeri", icon: (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            )}
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === tab.id
-                  ? "bg-red-500 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-red-50"
+                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
             >
               {tab.icon}
@@ -207,66 +207,195 @@ export default function WisataDetailPage({ params }: TourismDetailProps) {
         {/* Tab Content */}
         <div className="mb-6">
           {activeTab === "info" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="space-y-4">
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-gray-200 p-6">
+              <div className="space-y-6">
+                {/* Deskripsi */}
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Alamat Lengkap</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <LocationIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {tourismDetail.address}
+                  <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                    Deskripsi
+                  </div>
+                  <p className="text-gray-700 leading-relaxed text-sm">
+                    {wisata.deskripsi}
+                  </p>
+                </div>
+
+                {/* Alamat Lengkap */}
+                <div>
+                  <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Alamat Lengkap
+                  </div>
+                  <p className="text-gray-700 text-sm flex items-start gap-2 bg-gray-50 p-4 rounded-xl">
+                    <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    <span>{wisata.alamat || wisata.lokasi}</span>
+                  </p>
+                </div>
+
+                {/* Kategori */}
+                <div>
+                  <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    Kategori
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                    {wisata.kategori}
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Jam Operasional</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <ClockIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {tourismDetail.openHours}
+
+                {/* Jarak (jika ada) */}
+                {wisata.jarak && (
+                  <div>
+                    <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                      <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      Jarak
+                    </div>
+                    <p className="text-gray-700 text-sm bg-gray-50 p-4 rounded-xl font-medium">
+                      {wisata.jarak} dari pusat desa
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-2">Fasilitas</div>
-                  <div className="flex flex-wrap gap-2">
-                    {tourismDetail.facilities.map((facility, index) => (
-                      <div key={index} className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                        {facility}
+                )}
+
+                {/* Rating (jika ada) */}
+                {wisata.rating && (
+                  <div>
+                    <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                      <svg className="w-6 h-6 text-yellow-500 fill-yellow-500" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      Rating
+                    </div>
+                    <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <svg 
+                            key={i}
+                            className={`w-6 h-6 ${i < Math.floor(wisata.rating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 fill-gray-300'}`}
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                        ))}
                       </div>
-                    ))}
+                      <span className="text-2xl font-bold text-gray-800">{wisata.rating}</span>
+                      <span className="text-sm text-gray-600">/ 5.0</span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Kontak</div>
-                  <div className="text-sm text-gray-600 flex items-start gap-2">
-                    <PhoneIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    {tourismDetail.contact}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === "location" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="space-y-4">
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-gray-200 p-6">
+              <div className="space-y-6">
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-1">Koordinat GPS</div>
-                  <div className="text-sm text-gray-600">
-                    Lat: {tourismDetail.coordinates.lat}, Lng: {tourismDetail.coordinates.lng}
+                  <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-3">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Lokasi GPS
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <p className="text-gray-700 text-sm font-mono">{wisata.lokasi || 'Koordinat tidak tersedia'}</p>
                   </div>
                 </div>
-                <div className="rounded-xl bg-gradient-to-br from-red-100 to-red-200 p-8 text-center">
-                  <MapIcon className="mx-auto h-16 w-16 text-red-600 mb-2" />
-                  <div className="text-sm font-medium text-gray-700">Peta Lokasi</div>
+
+                {/* Map Placeholder */}
+                <div className="rounded-2xl bg-gradient-to-br from-red-100 to-orange-100 p-12 text-center">
+                  <svg className="mx-auto h-20 w-20 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <div className="text-sm font-semibold text-gray-700 mb-1">Peta Lokasi</div>
+                  <p className="text-xs text-gray-600">Klik tombol di bawah untuk membuka di Google Maps</p>
                 </div>
+
+                {/* Google Maps Button */}
+                <button 
+                  onClick={() => {
+                    const query = encodeURIComponent(`${wisata.judul}, ${wisata.alamat || wisata.lokasi}`);
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+                  }}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-6 rounded-2xl text-base font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Buka di Google Maps
+                </button>
               </div>
             </div>
           )}
 
-          {activeTab === "review" && (
-            <div className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-red-100 p-4">
-              <div className="text-center py-8">
-                <StarIcon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                <div className="text-sm font-semibold text-gray-700 mb-1">Belum ada ulasan</div>
-                <div className="text-xs text-gray-600">Jadilah yang pertama memberikan ulasan</div>
+          {activeTab === "gallery" && (
+            <div className="rounded-3xl bg-white/80 backdrop-blur-sm shadow-xl ring-1 ring-gray-200 p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4">
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Galeri Foto
+                </div>
+
+                {/* Check if there are any images */}
+                {((wisata.galeri && wisata.galeri.length > 0) || wisata.fotoUrl) ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Main Photo */}
+                    {wisata.fotoUrl && !imageError && (
+                      <div className="rounded-2xl overflow-hidden shadow-lg ring-2 ring-red-200">
+                        <img 
+                          src={wisata.fotoUrl} 
+                          alt={wisata.judul}
+                          onError={() => setImageError(true)}
+                          className="w-full h-64 object-cover"
+                        />
+                        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 text-xs font-semibold text-center">
+                          Foto Utama
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gallery Images */}
+                    {wisata.galeri && wisata.galeri.length > 0 && (
+                      <>
+                        <div className="text-sm font-semibold text-gray-700 mt-2">
+                          Foto Lainnya ({wisata.galeri.length})
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {wisata.galeri.map((imageUrl, index) => (
+                            <div key={index} className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105">
+                              <img 
+                                src={imageUrl} 
+                                alt={`${wisata.judul} - Foto ${index + 1}`}
+                                className="w-full h-40 object-cover"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl">
+                    <svg className="mx-auto h-20 w-20 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div className="text-sm font-semibold text-gray-700 mb-1">Belum ada foto</div>
+                    <p className="text-xs text-gray-600">Foto belum tersedia untuk wisata ini</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -274,26 +403,33 @@ export default function WisataDetailPage({ params }: TourismDetailProps) {
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <button className="w-full bg-red-500 text-white py-4 px-6 rounded-2xl text-lg font-semibold shadow-lg hover:bg-red-600 transition">
+          <button 
+            onClick={() => {
+              const query = encodeURIComponent(`${wisata.judul}, ${wisata.alamat || wisata.lokasi}`);
+              window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            }}
+            className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-4 px-6 rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            </svg>
             Kunjungi Sekarang
           </button>
 
           <div className="grid grid-cols-2 gap-3">
-            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-medium shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl transition flex items-center justify-center gap-2">
-              <ShareIcon className="h-4 w-4" />
+            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-semibold shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
               Bagikan
             </button>
-            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-medium shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl transition flex items-center justify-center gap-2">
-              <HeartIcon className="h-4 w-4" />
+            <button className="bg-white/90 text-red-600 py-3 px-4 rounded-xl text-sm font-semibold shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
               Favorit
             </button>
           </div>
-
-          {/* Google Maps Button */}
-          <button className="w-full bg-green-500 text-white py-3 px-4 rounded-xl text-sm font-medium shadow-lg hover:bg-green-600 transition flex items-center justify-center gap-2">
-            <MapPinIcon className="h-4 w-4" />
-            Buka di Google Maps
-          </button>
         </div>
       </div>
 

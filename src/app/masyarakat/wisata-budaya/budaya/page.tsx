@@ -1,79 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import HeaderCard from "../../../components/HeaderCard";
 import BottomNavigation from '../../../components/BottomNavigation';
+import { getAllBudaya, BudayaItem } from '../../../../lib/wisataBudayaService';
 
-type FilterType = "All" | "Seni" | "Upacara" | "Sejarah" | "Kerajinan";
-
-type CultureItem = {
-  id: string;
-  title: string;
-  category: string;
-  address: string;
-  location: string;
-  description: string;
-  image: string;
-  rating: number;
-  distance: string;
-};
-
-const cultureData: CultureItem[] = [
-  {
-    id: "1",
-    title: "Seni Tari Tradisional",
-    category: "Seni",
-    address: "Jl. Budaya No. 1, Peguyangan",
-    location: "Lokasi Sesuai GPS",
-    description: "Pertunjukan tari tradisional Bali yang memukau",
-    image: "/api/placeholder/300/200",
-    rating: 4.9,
-    distance: "1.5 km"
-  },
-  {
-    id: "2",
-    title: "Upacara Melasti",
-    category: "Upacara",
-    address: "Pantai Peguyangan, Desa Peguyangan",
-    location: "Lokasi Sesuai GPS",
-    description: "Upacara pembersihan diri umat Hindu Bali",
-    image: "/api/placeholder/300/200",
-    rating: 4.8,
-    distance: "2.1 km"
-  },
-  {
-    id: "3",
-    title: "Museum Sejarah Peguyangan",
-    category: "Sejarah",
-    address: "Jl. Sejarah No. 8, Peguyangan",
-    location: "Lokasi Sesuai GPS",
-    description: "Koleksi artefak dan peninggalan sejarah desa",
-    image: "/api/placeholder/300/200",
-    rating: 4.7,
-    distance: "900 m"
-  },
-  {
-    id: "4",
-    title: "Workshop Kerajinan Bambu",
-    category: "Kerajinan",
-    address: "Jl. Kerajinan No. 15, Peguyangan",
-    location: "Lokasi Sesuai GPS",
-    description: "Belajar membuat kerajinan tangan dari bambu",
-    image: "/api/placeholder/300/200",
-    rating: 4.6,
-    distance: "1.3 km"
-  }
-];
+type FilterType = "All" | "Tari" | "Upacara" | "Kerajinan" | "Musik" | "Tradisi";
 
 export default function BudayaPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+  const [budayaList, setBudayaList] = useState<BudayaItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredData = cultureData.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === "All" || item.category === activeFilter;
+  useEffect(() => {
+    fetchBudaya();
+  }, []);
+
+  const fetchBudaya = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllBudaya();
+      setBudayaList(data);
+    } catch (error) {
+      console.error('Error fetching budaya:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredData = budayaList.filter(item => {
+    const matchesSearch = item.judul.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === "All" || item.kategori === activeFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -126,80 +85,60 @@ export default function BudayaPage() {
 
         {/* Culture Listings */}
         <div className="space-y-4">
-          {filteredData.map((item) => (
-            <div key={item.id} className="group">
-              <div className="rounded-3xl bg-white/95 shadow-lg ring-1 ring-red-100 overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02]">
-                {/* Image Section */}
-                <div className="relative h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-                  <div className="text-center text-red-600">
-                    <CultureIcon className="mx-auto h-16 w-16 mb-2 opacity-50" />
-                    <div className="text-sm font-medium">Foto</div>
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <div className="bg-white/90 px-2 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm">
-                      ⭐ {item.rating}
-                    </div>
-                  </div>
-                  <div className="absolute top-3 left-3">
-                    <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                      {item.distance}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="p-4">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{item.title}</h3>
-                    <div className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                      {item.category}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-start gap-2">
-                      <LocationIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-gray-600">{item.address}</div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <MapIcon className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-gray-600">{item.location}</div>
-                    </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
+              <p className="text-gray-500 mt-4">Memuat data...</p>
+            </div>
+          ) : filteredData.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
+                <SearchIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                <div className="text-lg font-semibold text-gray-700 mb-2">Tidak ada hasil ditemukan</div>
+                <div className="text-sm text-gray-600">Coba ubah kata kunci pencarian atau filter</div>
+              </div>
+            </div>
+          ) : (
+            filteredData.map((item) => (
+              <div key={item.id} className="group">
+                <div className="rounded-3xl bg-white/95 shadow-lg ring-1 ring-red-100 overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02]">
+                  {/* Image Section */}
+                  <div className="relative h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                    {item.fotoUrl ? (
+                      <img src={item.fotoUrl} alt={item.judul} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center text-red-600">
+                        <CultureIcon className="mx-auto h-16 w-16 mb-2 opacity-50" />
+                        <div className="text-sm font-medium">Foto</div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <button className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-red-600 transition">
-                      Ikuti Acara
-                    </button>
-                    <Link href={`/masyarakat/wisata-budaya/budaya/detail/${item.id}`} className="bg-gray-100 text-gray-700 py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-200 transition">
-                      Detail
-                    </Link>
+                  {/* Content Section */}
+                  <div className="p-4">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{item.judul}</h3>
+                      <div className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                        {item.kategori}
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{item.deskripsi}</p>
+
+                    <div className="flex gap-2">
+                      <button className="flex-1 bg-red-500 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-red-600 transition">
+                        Pelajari
+                      </button>
+                      <Link href={`/masyarakat/wisata-budaya/budaya/detail/${item.id}`} className="bg-gray-100 text-gray-700 py-2 px-4 rounded-xl text-sm font-medium hover:bg-gray-200 transition">
+                        Detail
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
-
-        {/* Empty State */}
-        {filteredData.length === 0 && (
-          <div className="text-center py-12">
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-red-200 backdrop-blur-sm">
-              <SearchIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-              <div className="text-lg font-semibold text-gray-700 mb-2">Tidak ada hasil ditemukan</div>
-              <div className="text-sm text-gray-600">Coba ubah kata kunci pencarian atau filter</div>
-            </div>
-          </div>
-        )}
-
-        {/* Load More Button */}
-        {filteredData.length > 0 && (
-          <div className="mt-6 text-center">
-            <button className="bg-white/90 text-red-600 py-3 px-6 rounded-2xl text-sm font-medium shadow-lg ring-1 ring-red-200 hover:bg-white hover:shadow-xl transition">
-              Muat Lebih Banyak
-            </button>
-          </div>
-        )}
       </div>
 
       <BottomNavigation />

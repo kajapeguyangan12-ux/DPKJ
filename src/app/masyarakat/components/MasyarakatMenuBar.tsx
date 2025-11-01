@@ -152,7 +152,7 @@ export default function MasyarakatMenuBar({ columnsCount = 5 }: MasyarakatMenuBa
   const pathname = usePathname();
 
   let menuItems: MenuItem[] = allMenuItems;
-  if (user?.role === "warga_luar") {
+  if (user?.role === "warga_luar_dpkj") {
     menuItems = allMenuItems.filter(
       (item) => item.title === "E-Toko" || item.title === "Wisata & Budaya"
     );

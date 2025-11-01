@@ -52,16 +52,41 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == uid;
     }
 
-    // Users collection - for user management
-    match /users/{uid} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
-      allow write: if isAuthenticated() && request.auth.uid == uid;
+    // Users collection - for RBAC system
+    match /users/{document} {
+      // Allow read untuk authenticated users
+      allow read: if isAuthenticated();
+      
+      // Allow write hanya untuk admin
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // User profiles collection
+    match /user-profiles/{userId} {
+      allow read, write: if isAuthenticated() 
+        && (isAdmin() || request.auth.uid == userId);
+    }
+    
+    // User sessions - untuk tracking login
+    match /user-sessions/{sessionId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Admin logs - hanya admin yang bisa akses
+    match /admin-logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Role requests - untuk request perubahan role  
+    match /role-requests/{requestId} {
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
 
-    // Default deny all other access
+    // Default allow read/write for authenticated users (sementara)
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAuthenticated();
     }
   }
 }

@@ -3,12 +3,12 @@ import { auth, db } from "../../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 export type UserRole =
-  | "admin"
-  | "admin_desa"
-  | "kepala_desa"
-  | "kepala_dusun"
-  | "warga_dpkj"
-  | "warga_luar"
+  | "administrator"     // Semua akses panel admin
+  | "admin_desa"       // Semua fitur admin kecuali data desa & kelola pengguna
+  | "kepala_desa"      // Hanya data desa & layanan publik admin + akses masyarakat
+  | "kepala_dusun"     // Hanya pengaduan & layanan publik admin + akses masyarakat
+  | "warga_dpkj"       // Full akses masyarakat, tidak bisa akses panel admin
+  | "warga_luar_dpkj"  // Terbatas: profil desa, umkm, wisata budaya, e-news
   | "unknown";
 
 export interface CurrentUser {

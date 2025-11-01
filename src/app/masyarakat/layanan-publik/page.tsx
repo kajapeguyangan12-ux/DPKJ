@@ -5,6 +5,7 @@ import type { JSX } from "react";
 import Link from "next/link";
 import HeaderCard from "@/app/components/HeaderCard";
 import BottomNavigation from "@/app/components/BottomNavigation";
+import FormLayanan from "./components/FormLayanan";
 
 type ServiceItem = {
   title: string;
@@ -59,6 +60,8 @@ export default function LayananPublikPage() {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedService, setSelectedService] = useState<string>("");
 
   const filteredServices = useMemo(() => {
     const normalizedQuery = query.toLowerCase().trim();
@@ -73,6 +76,17 @@ export default function LayananPublikPage() {
       return matchCategory && matchQuery;
     });
   }, [query, selectedCategory]);
+
+  // Handle back from form
+  const handleBackFromForm = () => {
+    setShowForm(false);
+    setSelectedService("");
+  };
+
+  // Show form if a service is selected
+  if (showForm && selectedService) {
+    return <FormLayanan jenisLayanan={selectedService} onBack={handleBackFromForm} />;
+  }
 
   return (
     <main className="min-h-[100svh] bg-red-50 text-gray-900">
@@ -164,25 +178,12 @@ export default function LayananPublikPage() {
           {filteredServices.length > 0 ? (
             <div className="grid grid-cols-2 gap-4">
               {filteredServices.map((service) => (
-                <Link
+                <button
                   key={service.title}
-                  href={
-                    service.title === "Surat Kelakuan Baik"
-                      ? "/masyarakat/layanan-publik/surat-kelakuan-baik"
-                      : service.title === "Surat Keterangan Belum Nikah/Kawin"
-                      ? "/masyarakat/layanan-publik/surat-keterangan-belum-nikah"
-                      : service.title === "Surat Keterangan Belum Bekerja"
-                      ? "/masyarakat/layanan-publik/surat-keterangan-belum-bekerja"
-                      : service.title === "Surat Keterangan Kawin/Menikah"
-                      ? "/masyarakat/layanan-publik/surat-keterangan-kawin-menikah"
-                      : service.title === "Surat Keterangan Kematian"
-                      ? "/masyarakat/layanan-publik/surat-keterangan-kematian"
-                      : service.title === "Surat Keterangan Perjalanan"
-                      ? "/masyarakat/layanan-publik/surat-keterangan-perjalanan"
-                      : service.title === "Pelayanan Taring Dukcapil"
-                      ? "/masyarakat/layanan-publik/pelayanan-taring-dukcapil"
-                      : "#" // For other services, you can add their respective routes
-                  }
+                  onClick={() => {
+                    setSelectedService(service.title);
+                    setShowForm(true);
+                  }}
                   className="group relative flex h-full flex-col items-center justify-between gap-4 overflow-hidden rounded-3xl border border-red-100 bg-gradient-to-br from-white to-red-50/30 px-4 py-6 text-center shadow-md ring-1 ring-red-200/50 transition duration-300 hover:border-red-200 hover:shadow-lg hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
@@ -195,7 +196,7 @@ export default function LayananPublikPage() {
                   <span className="relative text-[11px] font-medium uppercase tracking-wide text-red-400/80 transition duration-300 group-hover:text-red-500">
                     {service.category}
                   </span>
-                </Link>
+                </button>
               ))}
             </div>
           ) : (

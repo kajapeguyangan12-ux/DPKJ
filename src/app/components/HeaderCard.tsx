@@ -8,6 +8,7 @@ type Props = {
   backUrl?: string;
   subtitle?: string;
   showBackButton?: boolean;
+  onBack?: () => void;
 };
 
 const DesaLogo = "/logo/LOGO_DPKJ.png";
@@ -20,7 +21,7 @@ const ArrowLeftIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function HeaderCard({ title = "Beranda", backUrl = "/masyarakat/home", subtitle, showBackButton = false }: Props) {
+export default function HeaderCard({ title = "Beranda", backUrl = "/masyarakat/home", subtitle, showBackButton = false, onBack }: Props) {
   return (
     <div className="mb-6 overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-gray-200/50 backdrop-blur-xl">
       <div className="relative">
@@ -37,12 +38,21 @@ export default function HeaderCard({ title = "Beranda", backUrl = "/masyarakat/h
         <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
           {/* Left Section - BGD Logo or Back Button */}
           {showBackButton ? (
-            <Link 
-              href={backUrl} 
-              className="group flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/30 hover:scale-105 active:scale-95 flex-shrink-0"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-white transition-transform group-hover:-translate-x-0.5" />
-            </Link>
+            onBack ? (
+              <button 
+                onClick={onBack}
+                className="group flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/30 hover:scale-105 active:scale-95 flex-shrink-0"
+              >
+                <ArrowLeftIcon className="h-5 w-5 text-white transition-transform group-hover:-translate-x-0.5" />
+              </button>
+            ) : (
+              <Link 
+                href={backUrl} 
+                className="group flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/30 hover:scale-105 active:scale-95 flex-shrink-0"
+              >
+                <ArrowLeftIcon className="h-5 w-5 text-white transition-transform group-hover:-translate-x-0.5" />
+              </Link>
+            )
           ) : (
             <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full overflow-hidden bg-white/95 backdrop-blur-sm shadow-sm ring-1 ring-white/20 flex-shrink-0">
               <Image

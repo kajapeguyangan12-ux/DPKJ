@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "../../../lib/firebase";
+import { useAuth } from '../../../contexts/AuthContext';
 import AdminLayout from "../components/AdminLayout";
 import AdminHeaderCard, { AdminHeaderSearchBar, AdminHeaderAccount } from "../../components/AdminHeaderCard";
 
@@ -41,11 +40,11 @@ const menu = [
 
 export default function ProfilDesaAdminPage() {
 	const router = useRouter();
+	const { logout } = useAuth();
 
 	const handleLogout = async () => {
 		try {
-			await signOut(auth);
-			router.push('/admin/login');
+			await logout('admin');
 		} catch (error) {
 			console.error('Logout error:', error);
 		}

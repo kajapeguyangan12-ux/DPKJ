@@ -4,18 +4,49 @@ import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "../../../lib/firebase";
 import { RoleCardType } from './components/RoleCard';
-import UserManagementList from './components/UserManagementList';
+import UserListNew from './components/UserListNew';
 import AdminLayout from '../components/AdminLayout';
 import AdminHeaderCard, { AdminHeaderSearchBar, AdminHeaderAccount } from "../../components/AdminHeaderCard";
-import { UserRole } from '../../../lib/rolePermissions';
+import { UserRole } from '../../masyarakat/lib/useCurrentUser';
+import { roleDescriptions } from '../../../lib/rolePermissions';
 
 const roleCards: RoleCardType[] = [
-  { id: 'admin', title: 'User Administrator', description: 'Akses penuh ke sistem', icon: '👨‍💻' },
-  { id: 'kepala_desa', title: 'User Kepala Desa', description: 'Manajemen desa & publik', icon: '👔' },
-  { id: 'kepala_dusun', title: 'User Kepala Dusun', description: 'Koordinasi wilayah dusun', icon: '🏘️' },
-  { id: 'admin_desa', title: 'User Admin Desa', description: 'Pengelolaan konten desa', icon: '📋' },
-  { id: 'warga_dpkj', title: 'User Warga DPKJ', description: 'Perwakilan masyarakat', icon: '👨‍🤝‍👨' },
-  { id: 'warga_luar', title: 'User Warga Luar DPKJ', description: 'Akses terbatas', icon: '👤' },
+  { 
+    id: 'administrator', 
+    title: 'Super Administrator', 
+    description: 'Akses penuh ke seluruh sistem admin dan masyarakat', 
+    icon: '👨‍💻' 
+  },
+  { 
+    id: 'admin_desa', 
+    title: 'Admin Desa', 
+    description: 'Akses admin kecuali kelola pengguna dan data desa', 
+    icon: '�' 
+  },
+  { 
+    id: 'kepala_desa', 
+    title: 'Kepala Desa', 
+    description: 'Akses data desa & layanan publik + halaman masyarakat', 
+    icon: '👔' 
+  },
+  { 
+    id: 'kepala_dusun', 
+    title: 'Kepala Dusun', 
+    description: 'Akses pengaduan & layanan publik + halaman masyarakat', 
+    icon: '🏘️' 
+  },
+  { 
+    id: 'warga_dpkj', 
+    title: 'Warga DPKJ', 
+    description: 'Akses lengkap ke fitur masyarakat', 
+    icon: '👨‍🤝‍👨' 
+  },
+  { 
+    id: 'warga_luar_dpkj', 
+    title: 'Warga Luar DPKJ', 
+    description: 'Akses terbatas: profil desa, e-news, UMKM, wisata budaya', 
+    icon: '👤' 
+  },
 ];
 
 export default function KelolaPenggunaPage() {
@@ -33,18 +64,27 @@ export default function KelolaPenggunaPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-4xl mx-auto">
-        <AdminHeaderCard title="Kelola Pengguna">
-          <AdminHeaderSearchBar />
-          <AdminHeaderAccount onLogout={handleLogout} />
-        </AdminHeaderCard>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <AdminHeaderCard title="Kelola Pengguna">
+            <AdminHeaderSearchBar />
+            <AdminHeaderAccount onLogout={handleLogout} />
+          </AdminHeaderCard>
 
         {/* Role Selection View */}
         {!listRole && (
           <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Pilih Role Pengguna</h2>
-              <p className="text-gray-600">Kelola pengguna berdasarkan role dan permission mereka</p>
+            <div className="mb-10 text-center">
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-lg border border-gray-100 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+                <span className="text-lg font-bold text-gray-800">Manajemen Role</span>
+              </div>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Pilih Role Pengguna</h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">Kelola pengguna berdasarkan role dan permission mereka dalam sistem SiGede DPKJ</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -72,24 +112,15 @@ export default function KelolaPenggunaPage() {
         {/* User Management View */}
         {listRole && (
           <div>
-            <div className="mb-8">
-              <button 
-                onClick={() => setListRole(null)} 
-                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 font-medium transition-colors mb-6"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Kembali ke Daftar Role
-              </button>
-            </div>
 
-            <UserManagementList 
+
+            <UserListNew 
               roleId={listRole.id as UserRole} 
               roleLabel={listRole.title}
             />
           </div>
         )}
+        </div>
       </div>
     </AdminLayout>
   );

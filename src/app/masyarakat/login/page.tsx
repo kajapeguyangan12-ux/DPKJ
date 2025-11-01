@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from '../../../contexts/AuthContext';
+import UserLoginHelp from '../../../components/UserLoginHelp';
+import { FirestoreUser } from '../../../lib/userManagementService';
 // Custom SVG icons as components
 const UserIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,20 +39,60 @@ const SipekaLogo = "/logo/LOGO_DPKJ.png";
 
 export default function LoginMasyarakatPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const { login, loading, isAuthenticated, isAdmin, user } = useAuth();
+  
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!identifier || !password) {
+      setError('ID User dan Password wajib diisi');
+      return;
+    }
+    
     setIsLoading(true);
-    
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // TODO: integrate real auth flow
-    router.push("/masyarakat/home");
+    setError('');
+
+    try {
+      console.log('🔐 MASYARAKAT LOGIN: Attempting login with identifier:', identifier);
+      
+      await login({
+        userId: identifier,
+        password: password
+      });
+
+      // Check if user is masyarakat (non-admin) after successful login
+      const storedUser = localStorage.getItem('sigede_auth_user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        
+        // Validate user role - admin roles cannot login here
+        if (userData.role && ['administrator', 'admin_desa', 'kepala_desa'].includes(userData.role)) {
+          setError('Akses ditolak. Admin harus login di halaman Admin.');
+          
+          // Clear the login data
+          localStorage.removeItem('sigede_auth_user');
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // Masyarakat login successful, redirect to masyarakat home
+        console.log('✅ MASYARAKAT LOGIN: Masyarakat login successful, redirecting to masyarakat home');
+        router.push('/masyarakat/home');
+      }
+      
+    } catch (error: any) {
+      console.error('❌ MASYARAKAT LOGIN: Login failed:', error);
+      setError(error.message || 'Login gagal. Periksa kembali ID dan password Anda.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,21 +149,22 @@ export default function LoginMasyarakatPage() {
               <form onSubmit={onSubmit} className="space-y-6">
                 {/* Username field */}
                 <div className="space-y-2">
-                  <label htmlFor="username" className="text-sm font-medium text-gray-700 block">
-                    Username
+                  <label htmlFor="identifier" className="text-sm font-medium text-gray-700 block">
+                    ID User / Email / Username
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <UserIcon className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      id="username"
+                      id="identifier"
                       type="text"
-                      placeholder="Masukkan username Anda"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Masukkan ID User, Email, atau Username"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 hover:bg-white/70 hover:border-gray-400 hover:shadow-md focus:bg-white focus:shadow-lg"
                       required
+                      disabled={isLoading || loading}
                     />
                   </div>
                 </div>
@@ -142,6 +186,7 @@ export default function LoginMasyarakatPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 hover:bg-white/70 hover:border-gray-400 hover:shadow-md focus:bg-white focus:shadow-lg"
                       required
+                      disabled={isLoading || loading}
                     />
                     <button
                       type="button"
@@ -157,17 +202,41 @@ export default function LoginMasyarakatPage() {
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <span>{error}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* User Info */}
+                {user && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-700 text-sm">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <span>Login sebagai: {user.displayName} ({user.role})</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className={`w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/30 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden ${isLoading ? 'animate-pulse-glow' : ''}`}
+                  disabled={isLoading || loading}
+                  className={`w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/30 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden ${isLoading || loading ? 'animate-pulse-glow' : ''}`}
                 >
                   {isLoading && (
                     <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 opacity-80"></div>
                   )}
                   <div className="relative z-10 flex items-center justify-center gap-3">
-                    {isLoading ? (
+                    {(isLoading || loading) ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         <span>Memproses masuk...</span>
@@ -182,6 +251,14 @@ export default function LoginMasyarakatPage() {
                     )}
                   </div>
                 </button>
+                
+                {/* Development Helper */}
+                <UserLoginHelp 
+                  onUserSelect={(user: FirestoreUser) => {
+                    setIdentifier(user.uid);
+                    setPassword('temp123'); // Placeholder password
+                  }}
+                />
 
                 {/* Links */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">

@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 export const runtime = 'nodejs';
-export const contentType = 'image/svg+xml';
+export const contentType = 'vercel.svg';
 
 export default async function Icon() {
   try {
@@ -13,7 +13,7 @@ export default async function Icon() {
     
     return new Response(logoContent, {
       headers: {
-        'Content-Type': 'image/svg+xml',
+        'Content-Type': 'vercel.svg',
       },
     });
   } catch (error) {

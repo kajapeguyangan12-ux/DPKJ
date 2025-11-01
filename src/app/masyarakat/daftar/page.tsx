@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import HeaderCard from "../../components/HeaderCard";
+import { userManagementService } from "../../../lib/userManagementService";
 
 // Custom SVG icons as components
 const UserIcon = ({ className }: { className?: string }) => (
@@ -50,6 +52,8 @@ const CheckIcon = ({ className }: { className?: string }) => (
 const DesaLogo = "/logo/LOGO_DPKJ.png";
 
 export default function DaftarMasyarakatPage() {
+  const router = useRouter();
+  
   const [form, setForm] = useState({
     username: "",
     name: "",
@@ -64,6 +68,8 @@ export default function DaftarMasyarakatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const canSubmit = useMemo(() => {
     return (
@@ -86,15 +92,66 @@ export default function DaftarMasyarakatPage() {
     if (!canSubmit) return;
     
     setIsLoading(true);
+    setError("");
+    setSuccessMessage("");
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    alert(
-      `Pendaftaran berhasil!\n\nUsername: ${form.username}\nNama: ${form.name}\nNIK: ${form.nik}\nEmail: ${form.email}\nTelp: ${form.phone}\n\nSilakan login untuk melanjutkan.`
-    );
-    
-    setIsLoading(false);
+    try {
+      console.log('🚀 Submitting registration...');
+      
+      // Validasi NIK (harus 16 digit)
+      if (form.nik.length !== 16) {
+        setError('NIK harus 16 digit');
+        setIsLoading(false);
+        return;
+      }
+
+      // Validasi phone number
+      if (form.phone.length < 10) {
+        setError('Nomor telepon tidak valid');
+        setIsLoading(false);
+        return;
+      }
+
+      // Panggil service untuk registrasi
+      const result = await userManagementService.registerMasyarakat({
+        username: form.username.trim(),
+        displayName: form.name.trim(),
+        nik: form.nik,
+        email: form.email.trim(),
+        phoneNumber: form.phone,
+        password: form.password
+      });
+
+      if (result.success) {
+        console.log('✅ Registration successful!');
+        setSuccessMessage(result.message);
+        
+        // Reset form
+        setForm({
+          username: "",
+          name: "",
+          nik: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirm: "",
+          agree: false,
+        });
+
+        // Redirect ke login setelah 2 detik
+        setTimeout(() => {
+          router.push('/masyarakat/login');
+        }, 2000);
+      } else {
+        console.log('❌ Registration failed:', result.message);
+        setError(result.message);
+      }
+    } catch (error: any) {
+      console.error('❌ Registration error:', error);
+      setError(error.message || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -129,6 +186,28 @@ export default function DaftarMasyarakatPage() {
               <h3 className="text-lg font-bold text-gray-800 mb-2">Data Identitas</h3>
               <p className="text-gray-600 text-sm">Pastikan data sesuai dengan identitas resmi</p>
             </div>
+
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckIcon className="w-5 h-5 text-green-500" />
+                  <span>{successMessage}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              </div>
+            )}
 
               <form onSubmit={onSubmit} className="space-y-4">
                 {/* Username field */}

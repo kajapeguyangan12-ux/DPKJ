@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "../../../lib/firebase";
+import { useAuth } from '../../../contexts/AuthContext';
 import AdminLayout from "../components/AdminLayout";
 import AdminHeaderCard, {
   AdminHeaderSearchBar,
@@ -25,6 +24,7 @@ import {
 
 export default function RegulasiDesaPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [regulasiData, setRegulasiData] = useState<RegulasiDesa[]>([]);
   const [stats, setStats] = useState<RegulasiStats>({
     totalPerkel: 0,
@@ -195,8 +195,7 @@ export default function RegulasiDesaPage() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      router.push('/admin/login');
+      await logout('admin');
     } catch (error) {
       console.error('Logout error:', error);
     }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNavigation from '../../components/BottomNavigation';
 import Image from "next/image";
 import Link from "next/link";
 import HeaderCard from "../../components/HeaderCard";
+import { getLaporanByUser } from "../../../lib/laporanService";
+import type { LaporanMasyarakat } from "../../../lib/laporanService";
 
 const DesaLogo = "/logo/LOGO_DPKJ.png";
 const BgdLogo = "/logo/Logo_BGD.png";
@@ -73,6 +75,11 @@ const complaintData: ComplaintItem[] = [
 
 const getStatusColor = (status: string) => {
   switch (status) {
+    case "menunggu": return "bg-yellow-100 text-yellow-700";
+    case "diproses": return "bg-blue-100 text-blue-700";
+    case "disetujui": return "bg-green-100 text-green-700";
+    case "selesai": return "bg-green-100 text-green-700";
+    case "ditolak": return "bg-red-100 text-red-700";
     case "Menunggu": return "bg-yellow-100 text-yellow-700";
     case "Diproses": return "bg-blue-100 text-blue-700";
     case "Selesai": return "bg-green-100 text-green-700";
@@ -94,18 +101,44 @@ export default function PengaduanPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [activeSort, setActiveSort] = useState<SortType>("Terbaru");
+  const [laporanData, setLaporanData] = useState<LaporanMasyarakat[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredData = complaintData.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === "All" || item.category === activeFilter;
+  useEffect(() => {
+    fetchLaporanData();
+  }, []);
+
+  const fetchLaporanData = async () => {
+    setLoading(true);
+    try {
+      const userId = localStorage.getItem('userId') || 'user-' + Date.now();
+      const data = await getLaporanByUser(userId);
+      setLaporanData(data);
+    } catch (error) {
+      console.error('Error fetching laporan:', error);
+      setLaporanData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredData = laporanData.filter(item => {
+    const matchesSearch = item.judulLaporan.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.isiLaporan.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === "All" || item.kategoriLaporan === activeFilter;
     return matchesSearch && matchesFilter;
   }).sort((a, b) => {
     switch (activeSort) {
-      case "Terbaru": return new Date(b.date).getTime() - new Date(a.date).getTime();
-      case "Terlama": return new Date(a.date).getTime() - new Date(b.date).getTime();
+      case "Terbaru": 
+        const aTime = a.tanggalLaporan?.seconds || 0;
+        const bTime = b.tanggalLaporan?.seconds || 0;
+        return bTime - aTime;
+      case "Terlama": 
+        const aTimeOld = a.tanggalLaporan?.seconds || 0;
+        const bTimeOld = b.tanggalLaporan?.seconds || 0;
+        return aTimeOld - bTimeOld;
       case "Status": return a.status.localeCompare(b.status);
-      case "Prioritas": return b.priority.localeCompare(a.priority);
+      case "Prioritas": return 0; // Priority tidak ada di LaporanMasyarakat
       default: return 0;
     }
   });
@@ -165,6 +198,16 @@ export default function PengaduanPage() {
           </select>
         </div>
 
+        {/* Buat Laporan Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => window.location.href = '/masyarakat/pengaduan/create'}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-2xl shadow-lg transition-colors"
+          >
+            + Buat Laporan Baru
+          </button>
+        </div>
+
         {/* Latest Reports Section */}
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Data Laporan Terbaru</h3>
@@ -184,13 +227,10 @@ export default function PengaduanPage() {
                   {/* Content Section */}
                   <div className="p-4">
                     <div className="mb-3">
-                      <h4 className="font-bold text-gray-900 mb-1">{item.title}</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">{item.judulLaporan}</h4>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                          {item.category}
-                        </div>
-                        <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
-                          {item.priority}
+                          {item.kategoriLaporan}
                         </div>
                       </div>
                     </div>
@@ -198,11 +238,11 @@ export default function PengaduanPage() {
                     <div className="space-y-2 mb-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-red-500" />
-                        <span>{item.date}</span>
+                        <span>{item.tanggalLaporan?.toDate ? item.tanggalLaporan.toDate().toLocaleDateString('id-ID') : 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <LocationIcon className="h-4 w-4 text-red-500" />
-                        <span>{item.location}</span>
+                        <span>{item.alamat}</span>
                       </div>
                     </div>
 
@@ -231,16 +271,6 @@ export default function PengaduanPage() {
             </div>
           </div>
         )}
-
-        {/* Create Report Button */}
-        <div className="fixed bottom-20 right-4 z-50">
-          <Link href="/masyarakat/pengaduan/buat">
-            <button className="bg-green-500 text-white py-3 px-4 rounded-2xl text-sm font-bold shadow-lg hover:bg-green-600 transition-all duration-200 flex items-center justify-center gap-2 active:scale-95">
-              <PlusIcon className="h-4 w-4" />
-              Buat Laporan
-            </button>
-          </Link>
-        </div>
       </div>
 
       <BottomNavigation />
