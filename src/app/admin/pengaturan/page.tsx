@@ -532,7 +532,8 @@ export default function PengaturanPage() {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Video akan diputar otomatis (autoplay) saat popup muncul. Mendukung video YouTube reguler dan YouTube Shorts.
+                    <strong>Desktop:</strong> Video akan autoplay dengan suara.<br/>
+                    <strong>Mobile:</strong> Autoplay dengan suara. Jika diblokir browser, user perlu tap play sekali. Mendukung video YouTube reguler dan YouTube Shorts.
                   </p>
                 </div>
 

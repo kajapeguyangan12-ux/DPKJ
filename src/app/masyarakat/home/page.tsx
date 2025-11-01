@@ -350,10 +350,10 @@ export default function HomeMasyarakatMobile() {
                     transform: 'scale(1.3)',
                     transformOrigin: 'center center'
                   }}
-                  src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}?autoplay=1&loop=1&playlist=${extractYouTubeId(pengaturan.popupYoutubeUrl)}&rel=0&modestbranding=1&controls=1`}
+                  src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}?autoplay=1&mute=0&loop=1&playlist=${extractYouTubeId(pengaturan.popupYoutubeUrl)}&rel=0&modestbranding=1&controls=1&playsinline=1`}
                   title="YouTube video"
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
               </div>
