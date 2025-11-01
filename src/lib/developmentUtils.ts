@@ -1,8 +1,12 @@
 // Clear all authentication data thoroughly
 const clearAllAuthData = () => {
-  // Clear localStorage
+  if (typeof window === 'undefined') return;
+  
+  // Clear localStorage - all auth related keys
   const authKeys = [
     'sigede_auth_user',
+    'userId',
+    'userRole',
     'firebase:authUser', 
     'firebase:host',
     'firebase:heartbeat',
@@ -13,17 +17,28 @@ const clearAllAuthData = () => {
     localStorage.removeItem(key);
   });
   
-  // Clear sessionStorage
+  // Also scan for any dynamic Firebase keys
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('firebase:') || key.startsWith('sigede_'))) {
+      localStorage.removeItem(key);
+    }
+  }
+  
+  // Clear sessionStorage completely
   sessionStorage.clear();
   
   // Clear any Firebase auth state in IndexedDB
-  if (typeof window !== 'undefined' && window.indexedDB) {
+  if (window.indexedDB) {
     try {
       indexedDB.deleteDatabase('firebaseLocalStorageDb');
+      console.log('🗑️ Cleared Firebase IndexedDB');
     } catch (e) {
       console.log('Could not clear IndexedDB:', e);
     }
   }
+  
+  console.log('🧹 Cleared all auth data');
 };
 
 // Development utility to handle HMR-safe logout

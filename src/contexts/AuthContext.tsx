@@ -49,6 +49,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔐 AUTH CONTEXT: Login attempt');
       setLoading(true);
       
+      // Clear any existing session first to prevent conflicts
+      clearAllAuthData();
+      setUser(null);
+      
       const authUser = await authService.login(credentials);
       
       // Save to state and localStorage
@@ -61,6 +65,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('✅ AUTH CONTEXT: Login successful, userId:', authUser.uid);
     } catch (error) {
       console.error('❌ AUTH CONTEXT: Login failed:', error);
+      // Clear everything on login failure
+      clearAllAuthData();
+      setUser(null);
       throw error;
     } finally {
       setLoading(false);
@@ -78,28 +85,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🚪 AUTH CONTEXT: Logout attempt for userType:', userType);
       setIsLoggingOut(true);
       
-      // Clear state FIRST to prevent race conditions
+      // Clear auth service first
+      await authService.logout();
+      
+      // Clear state
       setUser(null);
-      setLoading(true);
       
       // Use utility to clear all auth data thoroughly
       clearAllAuthData();
-      
-      await authService.logout();
       
       console.log('✅ AUTH CONTEXT: Logout successful, redirecting to login');
       
       // Determine redirect path based on user type
       const redirectPath = userType === 'admin' ? '/admin/login' : '/masyarakat/login';
       
-      // Force immediate redirect - use location.href for most reliable redirect
-      setTimeout(() => {
-        // Double check - clear everything again before redirect
-        clearAllAuthData();
-        
-        // Use location.href for most forceful redirect
-        window.location.href = redirectPath;
-      }, 10);
+      // Force reload to completely reset state
+      window.location.href = redirectPath;
       
     } catch (error) {
       console.error('❌ AUTH CONTEXT: Logout failed:', error);
@@ -108,17 +109,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       clearAllAuthData();
       
       const redirectPath = userType === 'admin' ? '/admin/login' : '/masyarakat/login';
-      
-      // Use location.href for more forceful redirect
-      setTimeout(() => {
-        window.location.href = redirectPath;
-      }, 10);
+      window.location.href = redirectPath;
     } finally {
-      // Reset logout flag after delay
-      setTimeout(() => {
-        setIsLoggingOut(false);
-        setLoading(false);
-      }, 50);
+      setIsLoggingOut(false);
+      setLoading(false);
     }
   };
 

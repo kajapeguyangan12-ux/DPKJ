@@ -62,6 +62,7 @@ interface PengaturanHome {
   popupIsi: string;
   popupFoto: string;
   popupYoutubeUrl: string;
+  popupYoutubeStartTime: number;
 }
 
 type MenuItem = {
@@ -350,7 +351,7 @@ export default function HomeMasyarakatMobile() {
                     transform: 'scale(1.3)',
                     transformOrigin: 'center center'
                   }}
-                  src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}?autoplay=1&mute=0&loop=1&playlist=${extractYouTubeId(pengaturan.popupYoutubeUrl)}&rel=0&modestbranding=1&controls=1&playsinline=1`}
+                  src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}?autoplay=1&mute=0&start=${pengaturan.popupYoutubeStartTime || 0}&loop=1&playlist=${extractYouTubeId(pengaturan.popupYoutubeUrl)}&rel=0&modestbranding=1&controls=1&playsinline=1`}
                   title="YouTube video"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -587,132 +588,6 @@ export default function HomeMasyarakatMobile() {
               ))}
             </div>
           </div>
-        </section>
-
-        {/* News Section */}
-        <section className="mb-6">
-          <h3 className="mb-4 text-base sm:text-lg font-bold text-blue-800">Berita Terbaru</h3>
-          {loading ? (
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm">
-              <div className="flex justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-              </div>
-            </div>
-          ) : beritaList.length > 0 ? (
-            <div 
-              onClick={handleBeritaClick}
-              className="rounded-3xl bg-white/90 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 group"
-            >
-              <div className="relative h-48 sm:h-64 bg-gradient-to-br from-blue-100 to-blue-200">
-                {beritaList[currentBeritaIndex]?.foto ? (
-                  <img
-                    src={beritaList[currentBeritaIndex].foto}
-                    alt={beritaList[currentBeritaIndex].judul}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Newspaper className="h-16 w-16 text-blue-600" />
-                  </div>
-                )}
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
-                {/* Title overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h4 className="text-white font-bold text-sm sm:text-base line-clamp-2">
-                    {beritaList[currentBeritaIndex]?.judul || 'Berita Terbaru'}
-                  </h4>
-                </div>
-              </div>
-              
-              <div className="p-4 text-center">
-                <div className="flex justify-center gap-2">
-                  {beritaList.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentBeritaIndex(index);
-                      }}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        index === currentBeritaIndex 
-                          ? 'w-8 bg-blue-600' 
-                          : 'w-2 bg-blue-300 hover:bg-blue-400'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm text-center text-gray-500">
-              Tidak ada berita tersedia
-            </div>
-          )}
-        </section>
-
-        {/* News Section - Auto Slide */}
-        <section className="mb-6">
-          <h3 className="mb-4 text-base sm:text-lg font-bold text-blue-800">Berita Terbaru</h3>
-          {loading ? (
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm">
-              <div className="flex justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-              </div>
-            </div>
-          ) : beritaList.length > 0 ? (
-            <div 
-              onClick={handleBeritaClick}
-              className="rounded-3xl bg-white/90 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-300 group"
-            >
-              <div className="relative h-48 sm:h-64 bg-gradient-to-br from-blue-100 to-blue-200">
-                {beritaList[currentBeritaIndex]?.foto ? (
-                  <img
-                    src={beritaList[currentBeritaIndex].foto}
-                    alt={beritaList[currentBeritaIndex].judul}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Newspaper className="h-16 w-16 text-blue-600" />
-                  </div>
-                )}
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
-                {/* Title overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h4 className="text-white font-bold text-sm sm:text-base line-clamp-2">
-                    {beritaList[currentBeritaIndex]?.judul || 'Berita Terbaru'}
-                  </h4>
-                </div>
-              </div>
-              
-              <div className="p-4 text-center">
-                <div className="flex justify-center gap-2">
-                  {beritaList.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentBeritaIndex(index);
-                      }}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        index === currentBeritaIndex 
-                          ? 'w-8 bg-blue-600' 
-                          : 'w-2 bg-blue-300 hover:bg-blue-400'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-3xl bg-white/90 p-8 shadow-xl ring-1 ring-blue-200 backdrop-blur-sm text-center text-gray-500">
-              Tidak ada berita tersedia
-            </div>
-          )}
         </section>
 
         {/* UKM Data Section - Auto Slide with Rating */}

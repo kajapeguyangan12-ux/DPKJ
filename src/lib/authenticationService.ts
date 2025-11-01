@@ -205,27 +205,46 @@ class AuthenticationService {
   // Logout
   async logout(): Promise<void> {
     try {
-      console.log('🚪 AUTH SERVICE: Starting Firebase logout');
-      await firebaseSignOut(auth);
-      console.log('✅ AUTH SERVICE: Firebase logout successful');
+      console.log('🚪 AUTH SERVICE: Starting logout');
       
-      // Clear specific auth items (avoid clearing all to prevent HMR issues)
+      // Clear all auth data first
       if (typeof window !== 'undefined') {
-        // Clear only essential auth-related items
-        localStorage.removeItem('sigede_auth_user');
-        localStorage.removeItem('firebase:authUser');
-        localStorage.removeItem('firebase:host');
-        console.log('🧹 AUTH SERVICE: Cleared auth storage');
+        // Clear all possible auth-related items
+        const keysToRemove = [
+          'sigede_auth_user',
+          'userId',
+          'userRole',
+          'firebase:authUser',
+          'firebase:host',
+        ];
+        
+        keysToRemove.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
+        // Clear any Firebase auth keys that start with specific patterns
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('firebase:') || key.startsWith('sigede_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+        
+        console.log('🧹 AUTH SERVICE: Cleared all auth storage');
       }
+      
+      // Sign out from Firebase Auth
+      if (auth.currentUser) {
+        await firebaseSignOut(auth);
+        console.log('✅ AUTH SERVICE: Firebase signOut successful');
+      }
+      
+      console.log('✅ AUTH SERVICE: Logout complete');
+      
     } catch (error) {
-      console.error('❌ AUTH SERVICE: Logout failed:', error);
-      // Even if logout fails, clear essential storage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('sigede_auth_user');
-        localStorage.removeItem('firebase:authUser');
-        localStorage.removeItem('firebase:host');
-      }
-      throw error;
+      console.error('❌ AUTH SERVICE: Logout error:', error);
+      // Even if Firebase signout fails, we've cleared storage
+      // Don't throw error to allow logout to complete
     }
   }
 

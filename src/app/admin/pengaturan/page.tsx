@@ -19,6 +19,7 @@ interface PengaturanHome {
   popupIsi: string;
   popupFoto: string;
   popupYoutubeUrl: string;
+  popupYoutubeStartTime: number;
 }
 
 export default function PengaturanPage() {
@@ -36,6 +37,7 @@ export default function PengaturanPage() {
     popupIsi: "",
     popupFoto: "",
     popupYoutubeUrl: "",
+    popupYoutubeStartTime: 0,
   });
   const [slideshowPreviews, setSlideshowPreviews] = useState<string[]>([]);
   const [slideshowFiles, setSlideshowFiles] = useState<File[]>([]);
@@ -69,6 +71,7 @@ export default function PengaturanPage() {
           popupIsi: data.popupIsi || "",
           popupFoto: data.popupFoto || "",
           popupYoutubeUrl: data.popupYoutubeUrl || "",
+          popupYoutubeStartTime: data.popupYoutubeStartTime || 0,
         });
         setPreviewKepalaDesa(data.fotoKepalaDesa || "");
         setPreviewPopup(data.popupFoto || "");
@@ -537,6 +540,25 @@ export default function PengaturanPage() {
                   </p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Mulai dari Detik ke-
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={pengaturan.popupYoutubeStartTime || 0}
+                    onChange={(e) =>
+                      setPengaturan({ ...pengaturan, popupYoutubeStartTime: parseInt(e.target.value) || 0 })
+                    }
+                    placeholder="0"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Masukkan detik untuk memulai video. Contoh: <strong>30</strong> = mulai dari detik ke-30. <strong>0</strong> = mulai dari awal.
+                  </p>
+                </div>
+
                 {pengaturan.popupYoutubeUrl && (
                   <div>
                     <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -545,7 +567,7 @@ export default function PengaturanPage() {
                     <div className="relative rounded-xl overflow-hidden shadow-lg" style={{ paddingBottom: '56.25%' }}>
                       <iframe
                         className="absolute top-0 left-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}`}
+                        src={`https://www.youtube.com/embed/${extractYouTubeId(pengaturan.popupYoutubeUrl)}?start=${pengaturan.popupYoutubeStartTime || 0}`}
                         title="YouTube video preview"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
